@@ -8,7 +8,7 @@ export const generateNewPlanet = async (): Promise<PlanetData> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: "Generate details for a unique fictional planet in the universe.",
+      contents: "Generate details for a unique fictional planet for a space strategy game. Include resource potential for mining, solar energy, and scientific research.",
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -16,17 +16,23 @@ export const generateNewPlanet = async (): Promise<PlanetData> => {
           properties: {
             name: { type: Type.STRING },
             type: { type: Type.STRING },
-            baseColor: { type: Type.STRING, description: "A hex color code for the planet surface" },
-            atmosphereColor: { type: Type.STRING, description: "A hex color code for the atmosphere" },
-            radius: { type: Type.NUMBER, description: "Radius value between 80 and 200" },
-            rotationSpeed: { type: Type.NUMBER, description: "Rotation speed between 0.001 and 0.01" },
+            baseColor: { type: Type.STRING, description: "Hex color code" },
+            atmosphereColor: { type: Type.STRING, description: "Hex color code" },
+            radius: { type: Type.NUMBER, description: "80-200" },
+            rotationSpeed: { type: Type.NUMBER, description: "0.001-0.01" },
             description: { type: Type.STRING },
-            anomalies: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING } 
+            anomalies: { type: Type.ARRAY, items: { type: Type.STRING } },
+            resources: {
+              type: Type.OBJECT,
+              properties: {
+                minerals: { type: Type.INTEGER, description: "1-10" },
+                energy: { type: Type.INTEGER, description: "1-10" },
+                tech: { type: Type.INTEGER, description: "1-10" }
+              },
+              required: ["minerals", "energy", "tech"]
             }
           },
-          required: ["name", "type", "baseColor", "atmosphereColor", "radius", "rotationSpeed", "description", "anomalies"]
+          required: ["name", "type", "baseColor", "atmosphereColor", "radius", "rotationSpeed", "description", "anomalies", "resources"]
         }
       }
     });
@@ -35,6 +41,6 @@ export const generateNewPlanet = async (): Promise<PlanetData> => {
     return data as PlanetData;
   } catch (error) {
     console.error("Error generating planet:", error);
-    throw error;
+    return (await import('../constants')).DEFAULT_PLANET;
   }
 };

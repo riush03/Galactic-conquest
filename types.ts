@@ -8,12 +8,27 @@ export interface PlanetData {
   rotationSpeed: number;
   description: string;
   anomalies: string[];
+  resources: {
+    minerals: number;
+    energy: number;
+    tech: number;
+  };
 }
 
-export interface Star {
-  x: number;
-  y: number;
-  size: number;
-  opacity: number;
-  speed: number;
+export type BuildingType = 'extractor' | 'solar' | 'lab' | 'habitat';
+
+export interface Building {
+  id: string;
+  type: BuildingType;
+  position: [number, number, number];
 }
+
+export interface ColonyState {
+  isEstablished: boolean;
+  minerals: number;
+  energy: number;
+  tech: number;
+  buildings: Building[];
+}
+
+export type ViewMode = 'orbit' | 'surface';
