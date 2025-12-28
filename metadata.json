@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Cosmos Explorer",
+  "description": "An interactive 2D space simulation featuring procedural planets, parallax starfields, and AI-generated celestial lore using Gemini.",
+  "requestFramePermissions": []
+}
