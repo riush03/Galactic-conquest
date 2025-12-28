@@ -15,12 +15,19 @@ export interface PlanetData {
   };
 }
 
-export type BuildingType = 'extractor' | 'solar' | 'lab' | 'habitat';
+export type BuildingType = 'extractor' | 'solar' | 'lab' | 'habitat' | 'satellite' | 'drone';
+
+export interface Resource {
+  type: 'energy' | 'minerals' | 'science' | 'data';
+  amount: number;
+}
 
 export interface Building {
   id: string;
   type: BuildingType;
   position: [number, number, number];
+  timestamp: number;
+  progress: number;
 }
 
 export interface ColonyState {
@@ -31,4 +38,12 @@ export interface ColonyState {
   buildings: Building[];
 }
 
-export type ViewMode = 'orbit' | 'surface';
+export type ViewMode = 'orbit' | 'surface' | 'landing';
+
+export interface InventoryItem {
+  type: BuildingType;
+  name: string;
+  cost: number;
+  icon: string;
+  color: string;
+}

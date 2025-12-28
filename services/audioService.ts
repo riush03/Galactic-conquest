@@ -26,7 +26,7 @@ class SpaceAudio {
     this.engineGain.connect(this.ctx.destination);
     this.engineOsc.start();
 
-    // 2. Synthesized Crickets (Night Sounds)
+    // 2. Synthesized Crickets
     this.cricketGain = this.ctx.createGain();
     this.cricketGain.gain.setValueAtTime(0.02, this.ctx.currentTime);
     this.cricketGain.connect(this.ctx.destination);
@@ -39,31 +39,21 @@ class SpaceAudio {
     const chirp = () => {
       if (!this.ctx || !this.cricketGain) return;
       const now = this.ctx.currentTime;
-      
-      // High pitched oscillator for the "chirp"
       const osc = this.ctx.createOscillator();
       const g = this.ctx.createGain();
-      
       osc.type = 'sine';
       osc.frequency.setValueAtTime(4500 + Math.random() * 500, now);
-      
-      // Rapid pulse pattern
       g.gain.setValueAtTime(0, now);
       for(let i=0; i<3; i++) {
         g.gain.exponentialRampToValueAtTime(0.1, now + i*0.05 + 0.01);
         g.gain.exponentialRampToValueAtTime(0.001, now + i*0.05 + 0.04);
       }
-      
       osc.connect(g);
       g.connect(this.cricketGain);
-      
       osc.start(now);
       osc.stop(now + 0.2);
-      
-      // Schedule next chirp randomly
       setTimeout(chirp, 800 + Math.random() * 2000);
     };
-    
     chirp();
   }
 
@@ -73,6 +63,38 @@ class SpaceAudio {
     const targetFreq = 55 + (intensity * 30);
     this.engineGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.1);
     this.engineOsc?.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.2);
+  }
+
+  playLaser() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+    g.gain.setValueAtTime(0.1, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(g);
+    g.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(now + 0.2);
+  }
+
+  playExplosion() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const noiseBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.5, this.ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseBuffer.length; i++) output[i] = Math.random() * 2 - 1;
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.3, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    noise.connect(g);
+    g.connect(this.ctx.destination);
+    noise.start();
   }
 
   playWarp() {
