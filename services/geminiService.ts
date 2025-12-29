@@ -63,3 +63,19 @@ export const generatePlanetDestinations = async (count: number = 3): Promise<Pla
     return [def, { ...def, name: "Gia Beta" }, { ...def, name: "Gia Gamma" }];
   }
 };
+
+export const generateScientificLog = async (planet: PlanetData, buildings: any[], minerals: number): Promise<string> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `You are a scientist on the planet ${planet.name}. 
+      The planet is a ${planet.type} type world.
+      Current colony has: ${buildings.length} modules deployed.
+      Resources stored: ${Math.floor(minerals)} minerals.
+      Write a short, professional, and slightly excited 2-sentence status update log to Earth Control about our progress.`,
+    });
+    return response.text || "Status nominal. Expansion proceeding as planned.";
+  } catch (error) {
+    return "Atmospheric interference detected. Signal weak, but colony remains stable.";
+  }
+};
