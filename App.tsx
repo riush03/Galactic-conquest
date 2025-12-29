@@ -1,10 +1,10 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import SimulationCanvas from './components/SimulationCanvas';
-import Cockpit3D from './components/Cockpit3D';
-import { LEVELS } from './constants';
-import { PlanetData, ColonyState, BuildingType, ViewMode, InventoryItem, Mission, Achievement, Building, FeedMessage, MenuState } from './types';
-import { spaceAudio } from './services/audioService';
+import SimulationCanvas from './components/SimulationCanvas.tsx';
+import Cockpit3D from './components/Cockpit3D.tsx';
+import { LEVELS } from './constants.ts';
+import { PlanetData, ColonyState, BuildingType, ViewMode, InventoryItem, Mission, Achievement, Building, FeedMessage, MenuState } from './types.ts';
+import { spaceAudio } from './services/audioService.ts';
 
 const MissionPanel: React.FC<{ missions: Mission[]; currentColony: ColonyState }> = ({ missions, currentColony }) => {
   return (
@@ -15,7 +15,6 @@ const MissionPanel: React.FC<{ missions: Mission[]; currentColony: ColonyState }
       </div>
       <div className="space-y-4">
         {missions.map((m) => {
-          // Calculate progress based on mission type
           let current = 0;
           if (m.type === 'build') {
             current = currentColony.buildings.filter(b => b.type === m.buildingType).length;
@@ -241,7 +240,6 @@ const App: React.FC = () => {
     isEstablished: false, minerals: 2000, energy: 1000, tech: 0, buildings: []
   });
 
-  // Mission Tracking Logic
   useEffect(() => {
     if (menuState !== 'playing' || viewMode !== 'surface') return;
     
@@ -294,11 +292,10 @@ const App: React.FC = () => {
       const targetIdx = Math.min(nextIdx, LEVELS.length - 1);
       setLevelIndex(targetIdx);
       setPlanet(LEVELS[targetIdx].planet);
-      // Reset planet-specific colony but carry minerals (like capital)
       setColony(prev => ({ 
         ...prev, 
         buildings: [], 
-        minerals: prev.minerals + 2500, // Victory bonus
+        minerals: prev.minerals + 2500,
         energy: 1000,
         tech: 0
       }));
@@ -316,6 +313,7 @@ const App: React.FC = () => {
     { type: 'solar', name: 'Power Array', cost: 80, icon: 'fa-bolt', color: 'text-cyan-400' },
     { type: 'plants', name: 'Biodome', cost: 120, icon: 'fa-leaf', color: 'text-green-400' },
     { type: 'rover', name: 'Space Rover', cost: 300, icon: 'fa-car-side', color: 'text-orange-400' },
+    { type: 'satellite', name: 'Comm Sat', cost: 500, icon: 'fa-satellite', color: 'text-cyan-300' },
   ];
 
   useEffect(() => {
@@ -328,6 +326,7 @@ const App: React.FC = () => {
           if (b.type === 'solar') e += 50;
           if (b.type === 'plants') e += 15;
           if (b.type === 'lab') t += 10;
+          if (b.type === 'satellite') t += 25;
         });
         return { 
           ...prev, 
@@ -362,6 +361,7 @@ const App: React.FC = () => {
             setCelebration(selected.name); setPlacingType(null); spaceAudio.playLaser();
           }
         }}
+        /* Fix for line 364: Changed clacingType to placingType */
         isPlacing={placingType} isStarted={menuState === 'playing'}
         onLandComplete={() => { setViewMode('surface'); unlockAchievement('first_landing'); setShowGreeting(true); spaceAudio.playSuccess(); }} 
         onAscendComplete={() => setViewMode('orbit')}
@@ -399,27 +399,27 @@ const App: React.FC = () => {
               {placingType ? `Targeting zone for ${placingType.toUpperCase()}` : "Select structure to deploy"}
             </span>
           </div>
-          <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 rounded-3xl md:rounded-[40px] p-4 md:p-8 flex flex-col md:flex-row items-center justify-between w-full shadow-2xl gap-4">
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-4 w-full md:w-auto">
+          <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 rounded-3xl md:rounded-[40px] p-2 md:p-8 flex flex-col md:flex-row items-center justify-between w-full shadow-2xl gap-4">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1 md:gap-4 w-full md:w-auto">
               {inventory.map((item) => (
                 <button 
                   key={item.type} 
                   onClick={() => { setPlacingType(placingType === item.type ? null : item.type); spaceAudio.playLaser(); }}
                   disabled={colony.minerals < item.cost}
-                  className={`relative flex-shrink-0 w-full h-16 md:w-28 md:h-28 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center
+                  className={`relative flex-shrink-0 w-full h-12 md:w-24 md:h-28 rounded-xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center
                     ${placingType === item.type ? 'bg-cyan-600/40 border-cyan-400 scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'bg-white/5 border-transparent hover:bg-white/10'}
                     ${colony.minerals < item.cost ? 'opacity-20 grayscale cursor-not-allowed' : ''}
                   `}
                 >
-                  <i className={`fas ${item.icon} text-xl md:text-4xl mb-1 md:mb-2 ${item.color}`} />
-                  <span className="text-[7px] md:text-[9px] font-black uppercase tracking-tighter text-center px-1 truncate w-full">{item.name}</span>
-                  <div className="absolute -top-2 -right-1 md:-top-3 md:-right-3 bg-slate-900 px-2 md:px-3 py-0.5 md:py-1 rounded-lg md:rounded-xl text-[7px] md:text-[10px] font-mono border border-white/10 shadow-lg">{item.cost}</div>
+                  <i className={`fas ${item.icon} text-sm md:text-3xl mb-1 ${item.color}`} />
+                  <span className="text-[6px] md:text-[9px] font-black uppercase tracking-tighter text-center px-1 truncate w-full">{item.name}</span>
+                  <div className="absolute -top-1 -right-1 md:-top-3 md:-right-3 bg-slate-900 px-1 md:px-3 py-0.5 md:py-1 rounded-lg md:rounded-xl text-[6px] md:text-[10px] font-mono border border-white/10 shadow-lg">{item.cost}</div>
                 </button>
               ))}
             </div>
             <button 
               onClick={() => { setViewMode('ascending'); setShowGreeting(false); spaceAudio.playWhoosh(); }} 
-              className="w-full md:w-auto md:ml-8 bg-cyan-600 hover:bg-cyan-500 text-white px-8 md:px-16 py-4 md:py-10 rounded-2xl md:rounded-3xl text-xs md:text-sm font-black uppercase tracking-[0.3em] border border-cyan-400 transition-all hover:scale-105 active:scale-95 shadow-2xl"
+              className="w-full md:w-auto md:ml-8 bg-cyan-600 hover:bg-cyan-500 text-white px-4 md:px-12 py-3 md:py-10 rounded-xl md:rounded-3xl text-[10px] md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.3em] border border-cyan-400 transition-all hover:scale-105 active:scale-95 shadow-2xl"
             >
               Orbit Insertion
             </button>
