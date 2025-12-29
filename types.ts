@@ -1,13 +1,17 @@
 
 export interface PlanetData {
   name: string;
-  type: string;
+  type: 'Terrestrial' | 'Gas Giant' | 'Ice Giant' | 'Lava' | 'Toxic';
   baseColor: string;
   atmosphereColor: string;
   radius: number;
   rotationSpeed: number;
   description: string;
   anomalies: string[];
+  hasRings: boolean;
+  ringColor?: string;
+  ringRadiusInner?: number;
+  ringRadiusOuter?: number;
   resources: {
     minerals: number;
     energy: number;
@@ -15,12 +19,7 @@ export interface PlanetData {
   };
 }
 
-export type BuildingType = 'extractor' | 'solar' | 'lab' | 'habitat' | 'satellite' | 'drone';
-
-export interface Resource {
-  type: 'energy' | 'minerals' | 'science' | 'data';
-  amount: number;
-}
+export type BuildingType = 'extractor' | 'solar' | 'lab' | 'habitat' | 'satellite' | 'drone' | 'plants' | 'rover' | 'shuttle';
 
 export interface Building {
   id: string;
@@ -38,7 +37,7 @@ export interface ColonyState {
   buildings: Building[];
 }
 
-export type ViewMode = 'orbit' | 'surface' | 'landing';
+export type ViewMode = 'orbit' | 'surface' | 'landing' | 'ascending';
 
 export interface InventoryItem {
   type: BuildingType;
@@ -46,4 +45,24 @@ export interface InventoryItem {
   cost: number;
   icon: string;
   color: string;
+}
+
+export interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  target: number;
+  current: number;
+  type: 'build' | 'resource' | 'exploration';
+  requirement: string;
+  completed: boolean;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  unlocked: boolean;
+  unlockedAt?: number;
 }

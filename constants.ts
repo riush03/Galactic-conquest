@@ -10,6 +10,7 @@ export const DEFAULT_PLANET: PlanetData = {
   rotationSpeed: 0.002,
   description: "A serene oceanic world located in the habitable zone of the Sirius system.",
   anomalies: ["Bioluminescent oceans", "Crystalline rain"],
+  hasRings: false,
   resources: {
     minerals: 5,
     energy: 8,

@@ -1,141 +1,89 @@
 
-import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import React from 'react';
 
 interface Cockpit3DProps {
-  tilt: { x: number, y: number }; // -1 to 1 range
+  tilt: { x: number, y: number };
   isHyperdrive: boolean;
 }
 
 const Cockpit3D: React.FC<Cockpit3DProps> = ({ tilt, isHyperdrive }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const modelRef = useRef<THREE.Group | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  // We use CSS transforms to create a 3D tilting cockpit feel
+  const cockpitTiltX = tilt.y * 15;
+  const cockpitTiltY = tilt.x * 15;
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+  return (
+    <div className="absolute inset-0 pointer-events-none z-40 flex items-center justify-center overflow-hidden">
+      <div 
+        className="relative w-full h-full transition-transform duration-300 ease-out"
+        style={{ 
+          transform: `perspective(1000px) rotateX(${cockpitTiltX}deg) rotateY(${cockpitTiltY}deg)`,
+          transformStyle: 'preserve-3d'
+        }}
+      >
+        {/* Main Cockpit Frame */}
+        <div className="absolute inset-0 border-[40px] border-slate-900/40 rounded-[100px] shadow-[inset_0_0_200px_rgba(0,0,0,0.8)]" />
+        
+        {/* Left Console */}
+        <div className="absolute bottom-0 left-0 w-1/4 h-1/3 bg-gradient-to-tr from-slate-950 to-slate-900/80 border-t border-r border-white/10 rounded-tr-[100px] p-8 flex flex-col justify-end gap-4 shadow-2xl">
+          <div className="flex gap-2">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`w-3 h-3 rounded-sm ${i < 3 ? 'bg-cyan-500 animate-pulse' : 'bg-slate-800'}`} />
+            ))}
+          </div>
+          <div className="h-1 w-full bg-slate-800 overflow-hidden">
+            <div className="h-full bg-cyan-400 animate-[loading_2s_linear_infinite]" style={{ width: '60%' }} />
+          </div>
+          <div className="text-[10px] font-mono text-cyan-500/50 uppercase tracking-tighter">Engine Core Stability: 98.4%</div>
+        </div>
 
-    // Setup Scene
-    const scene = new THREE.Scene();
-    
-    // Adjusted FOV and clipping planes for internal view
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-    // Position the "pilot's eyes"
-    camera.position.set(0, 0.1, 0.8); 
-    
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-    
-    containerRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
+        {/* Right Console */}
+        <div className="absolute bottom-0 right-0 w-1/4 h-1/3 bg-gradient-to-tl from-slate-950 to-slate-900/80 border-t border-l border-white/10 rounded-tl-[100px] p-8 flex flex-col justify-end items-end gap-4 shadow-2xl">
+           <div className="text-right">
+             <div className="text-[10px] font-mono text-cyan-500/50 uppercase mb-1 tracking-widest">Life Support</div>
+             <div className="flex gap-1 justify-end">
+                <div className="w-1 h-6 bg-cyan-500" />
+                <div className="w-1 h-6 bg-cyan-500" />
+                <div className="w-1 h-6 bg-cyan-500" />
+                <div className="w-1 h-6 bg-cyan-600/30" />
+             </div>
+           </div>
+           <div className="w-full h-12 bg-black/40 border border-white/5 rounded-lg flex items-center justify-center">
+              <span className="text-cyan-400 font-mono text-xs animate-pulse tracking-[0.3em]">SCANNING...</span>
+           </div>
+        </div>
 
-    // Enhanced Lighting
-    // Ambient fill
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
+        {/* HUD Elements - Center Glass */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2/3 h-1/2 flex items-center justify-center">
+           {/* Center Reticle */}
+           <div className="relative w-32 h-32 border border-cyan-500/20 rounded-full flex items-center justify-center">
+              <div className="w-1 h-1 bg-cyan-400 rounded-full" />
+              <div className="absolute top-0 w-px h-4 bg-cyan-400" />
+              <div className="absolute bottom-0 w-px h-4 bg-cyan-400" />
+              <div className="absolute left-0 w-4 h-px bg-cyan-400" />
+              <div className="absolute right-0 w-4 h-px bg-cyan-400" />
+           </div>
+           
+           {/* Speed Indicators during Hyperdrive */}
+           {isHyperdrive && (
+             <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-pulse" />
+                <div className="absolute text-cyan-400 font-black text-4xl italic tracking-tighter opacity-50 animate-bounce">WARP ACTIVE</div>
+             </div>
+           )}
+        </div>
 
-    // Natural top-down lighting
-    const hemiLight = new THREE.HemisphereLight(0x3b82f6, 0x020617, 1);
-    scene.add(hemiLight);
-
-    // Front-facing directional light to define shapes
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    dirLight.position.set(0, 5, 5);
-    scene.add(dirLight);
-
-    // Internal cockpit glow
-    const cockpitPointLight = new THREE.PointLight(0x3b82f6, 10, 5);
-    cockpitPointLight.position.set(0, 0, 0);
-    scene.add(cockpitPointLight);
-
-    // Load Model
-    const loader = new GLTFLoader();
-    const modelUrl = 'https://raw.githubusercontent.com/riush03/Galactic-conquest/main/models/spaceship_cockpit.glb';
-    
-    loader.load(modelUrl, (gltf) => {
-      const model = gltf.scene;
-      
-      // Reset scale to 1 or 1.5 depending on model dimensions
-      model.scale.set(1.5, 1.5, 1.5);
-      // Position model so camera is inside/behind the dash
-      model.position.set(0, -1.0, 0.2); 
-      // Rotate to face the window
-      model.rotation.y = Math.PI; 
-      
-      scene.add(model);
-      modelRef.current = model;
-      
-      // Traverse to ensure textures are vivid
-      model.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          if (mesh.material) {
-             (mesh.material as THREE.MeshStandardMaterial).envMapIntensity = 1.5;
-             (mesh.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
-          }
-        }
-      });
-      console.log("Cockpit model loaded and added to scene");
-    }, (xhr) => {
-      console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-    }, (error) => {
-      console.error('An error happened loading the cockpit:', error);
-    });
-
-    // Animation Loop
-    let animationId: number;
-    const animate = () => {
-      if (modelRef.current) {
-        // Smooth rotation/tilt based on steering (subtle)
-        const targetRotZ = tilt.x * -0.05;
-        const targetRotX = tilt.y * 0.03;
-        const targetRotY = Math.PI + (tilt.x * 0.02);
-
-        modelRef.current.rotation.z += (targetRotZ - modelRef.current.rotation.z) * 0.1;
-        modelRef.current.rotation.x += (targetRotX - modelRef.current.rotation.x) * 0.1;
-        modelRef.current.rotation.y += (targetRotY - modelRef.current.rotation.y) * 0.1;
-
-        // Visual feedback for hyperdrive (vibration)
-        if (isHyperdrive) {
-          modelRef.current.position.x = (Math.random() - 0.5) * 0.01;
-          modelRef.current.position.y = -1.0 + (Math.random() - 0.5) * 0.01;
-        } else {
-          modelRef.current.position.x = 0;
-          modelRef.current.position.y = -1.0;
-        }
-      }
-
-      renderer.render(scene, camera);
-      animationId = requestAnimationFrame(animate);
-    };
-    animate();
-
-    const handleResize = () => {
-      if (!rendererRef.current) return;
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      rendererRef.current.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationId);
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-        if (containerRef.current && rendererRef.current.domElement) {
-          containerRef.current.removeChild(rendererRef.current.domElement);
-        }
-      }
-    };
-  }, []);
-
-  return <div ref={containerRef} className="absolute inset-0 z-20 pointer-events-none" />;
+        {/* Top Trim */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-12 bg-slate-950/90 rounded-b-3xl border-b border-white/10 flex items-center justify-center gap-12 px-12">
+           <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span className="text-[8px] font-black tracking-widest text-red-500 uppercase">REC</span>
+           </div>
+           <div className="text-[10px] font-mono text-white/40 tracking-[0.5em]">SYSTEM AUTO-PILOT ENABLED</div>
+           <div className="text-[10px] font-mono text-cyan-400 tracking-widest">NAV: 04-X-99</div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Cockpit3D;
