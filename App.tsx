@@ -6,6 +6,85 @@ import { LEVELS } from './constants';
 import { PlanetData, ColonyState, BuildingType, ViewMode, InventoryItem, Mission, Achievement, Building, FeedMessage, MenuState } from './types';
 import { spaceAudio } from './services/audioService';
 
+const MissionPanel: React.FC<{ missions: Mission[]; currentColony: ColonyState }> = ({ missions, currentColony }) => {
+  return (
+    <div className="fixed top-24 left-6 z-50 w-72 bg-slate-950/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-[slideIn_0.3s_ease-out]">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+        <h3 className="text-[10px] font-black text-white/60 uppercase tracking-[0.3em]">Active Objectives</h3>
+      </div>
+      <div className="space-y-4">
+        {missions.map((m) => {
+          // Calculate progress based on mission type
+          let current = 0;
+          if (m.type === 'build') {
+            current = currentColony.buildings.filter(b => b.type === m.buildingType).length;
+          } else if (m.type === 'resource_minerals') {
+            current = currentColony.minerals;
+          } else if (m.type === 'resource_energy') {
+            current = currentColony.energy;
+          } else if (m.type === 'resource_tech') {
+            current = currentColony.tech;
+          }
+
+          const progress = Math.min(100, (current / m.target) * 100);
+          const isDone = current >= m.target;
+
+          return (
+            <div key={m.id} className={`transition-opacity ${isDone ? 'opacity-40' : 'opacity-100'}`}>
+              <div className="flex justify-between items-end mb-1">
+                <span className="text-xs font-bold text-white uppercase tracking-tight line-clamp-1">{m.title}</span>
+                <span className="text-[10px] font-mono text-cyan-400">{Math.floor(current)} / {m.target}</span>
+              </div>
+              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-1000 ${isDone ? 'bg-green-500' : 'bg-cyan-500'}`} 
+                  style={{ width: `${progress}%` }} 
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const MissionCompleteOverlay: React.FC<{ planetName: string; onNext: () => void }> = ({ planetName, onNext }) => {
+  return (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6">
+      <div className="max-w-xl w-full bg-slate-900 border-2 border-green-500 rounded-[50px] p-12 text-center shadow-[0_0_100px_rgba(34,197,94,0.3)] animate-[whoa_0.5s_ease-out]">
+        <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_40px_rgba(34,197,94,0.6)]">
+          <i className="fas fa-check text-4xl text-white" />
+        </div>
+        <h2 className="text-5xl font-black italic tracking-tighter uppercase text-white mb-2">Planet Secured</h2>
+        <p className="text-green-400 text-xs font-black uppercase tracking-[0.5em] mb-8">Mission objectives finalized on {planetName}</p>
+        
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 mb-10 text-left">
+          <div className="text-[10px] font-black text-white/40 uppercase mb-4 tracking-widest">Colony Performance</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-[9px] text-white/30 uppercase font-black">Rating</div>
+              <div className="text-xl font-black text-yellow-500 tracking-widest">RANK S</div>
+            </div>
+            <div>
+              <div className="text-[9px] text-white/30 uppercase font-black">Bonus</div>
+              <div className="text-xl font-black text-cyan-400">+2500 MIN</div>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          onClick={onNext}
+          className="w-full py-6 bg-green-600 hover:bg-green-500 text-white font-black text-xl uppercase tracking-[0.4em] rounded-3xl transition-all shadow-2xl active:scale-95 border-b-8 border-green-800"
+        >
+          Next Sector Jump
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const AstronautGreeting: React.FC<{ planetName: string; onClose: () => void }> = ({ planetName, onClose }) => {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/20 pointer-events-none">
@@ -139,6 +218,7 @@ const App: React.FC = () => {
   const [levelIndex, setLevelIndex] = useState(0); 
   const [showGalaxyMap, setShowGalaxyMap] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
+  const [showMissionComplete, setShowMissionComplete] = useState(false);
   
   const currentLevelDef = LEVELS[levelIndex];
   const [planet, setPlanet] = useState<PlanetData>(currentLevelDef.planet);
@@ -161,6 +241,28 @@ const App: React.FC = () => {
     isEstablished: false, minerals: 2000, energy: 1000, tech: 0, buildings: []
   });
 
+  // Mission Tracking Logic
+  useEffect(() => {
+    if (menuState !== 'playing' || viewMode !== 'surface') return;
+    
+    const allDone = currentLevelDef.missions.every(m => {
+      if (m.type === 'build') {
+        return colony.buildings.filter(b => b.type === m.buildingType).length >= m.target;
+      }
+      if (m.type === 'resource_minerals') return colony.minerals >= m.target;
+      if (m.type === 'resource_energy') return colony.energy >= m.target;
+      if (m.type === 'resource_tech') return colony.tech >= m.target;
+      return false;
+    });
+
+    if (allDone && !showMissionComplete) {
+      setTimeout(() => {
+        setShowMissionComplete(true);
+        spaceAudio.playSuccess();
+      }, 1000);
+    }
+  }, [colony, currentLevelDef, menuState, viewMode, showMissionComplete]);
+
   const unlockAchievement = useCallback((id: string) => {
     setAchievements(prev => prev.map(a => {
       if (a.id === id && !a.unlocked) {
@@ -180,6 +282,7 @@ const App: React.FC = () => {
   const handleWarpToLevel = async (nextIdx: number) => {
     setShowGalaxyMap(false);
     setShowGreeting(false);
+    setShowMissionComplete(false);
     if (menuState !== 'playing') setMenuState('playing');
     if (hyperdrive) return; 
 
@@ -188,9 +291,17 @@ const App: React.FC = () => {
     spaceAudio.playWarp();
     
     setTimeout(() => {
-      setLevelIndex(nextIdx);
-      setPlanet(LEVELS[nextIdx].planet);
-      setColony(prev => ({ ...prev, buildings: [], minerals: prev.minerals }));
+      const targetIdx = Math.min(nextIdx, LEVELS.length - 1);
+      setLevelIndex(targetIdx);
+      setPlanet(LEVELS[targetIdx].planet);
+      // Reset planet-specific colony but carry minerals (like capital)
+      setColony(prev => ({ 
+        ...prev, 
+        buildings: [], 
+        minerals: prev.minerals + 2500, // Victory bonus
+        energy: 1000,
+        tech: 0
+      }));
       setHyperdrive(false); 
       setScreenEffect('flash'); 
       unlockAchievement('warp_speed');
@@ -211,13 +322,19 @@ const App: React.FC = () => {
     if (menuState !== 'playing') return;
     const interval = setInterval(() => {
       setColony(prev => {
-        let m = 5, e = 5;
+        let m = 5, e = 5, t = 2;
         prev.buildings.forEach(b => {
           if (b.type === 'extractor') m += 30;
           if (b.type === 'solar') e += 50;
           if (b.type === 'plants') e += 15;
+          if (b.type === 'lab') t += 10;
         });
-        return { ...prev, minerals: prev.minerals + m, energy: prev.energy + e };
+        return { 
+          ...prev, 
+          minerals: prev.minerals + m, 
+          energy: prev.energy + e,
+          tech: prev.tech + t
+        };
       });
     }, 1000);
     return () => clearInterval(interval);
@@ -263,7 +380,16 @@ const App: React.FC = () => {
             <span className="text-[8px] md:text-[10px] text-cyan-400 font-black uppercase tracking-widest mb-1">Energy</span>
             <span className="text-xl md:text-3xl font-mono font-black">{Math.floor(colony.energy)}</span>
           </div>
+          <div className="w-px h-8 md:h-10 bg-white/10" />
+          <div className="flex flex-col items-center">
+            <span className="text-[8px] md:text-[10px] text-purple-400 font-black uppercase tracking-widest mb-1">Tech</span>
+            <span className="text-xl md:text-3xl font-mono font-black">{Math.floor(colony.tech)}</span>
+          </div>
         </div>
+      )}
+
+      {viewMode === 'surface' && menuState === 'playing' && !showGalaxyMap && !showMissionComplete && (
+        <MissionPanel missions={currentLevelDef.missions} currentColony={colony} />
       )}
 
       {viewMode === 'surface' && menuState === 'playing' && !showGalaxyMap && (
@@ -325,6 +451,7 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {showMissionComplete && <MissionCompleteOverlay planetName={planet.name} onNext={() => handleWarpToLevel(levelIndex + 1)} />}
       {showGreeting && <AstronautGreeting planetName={planet.name} onClose={() => setShowGreeting(false)} />}
       {unlockedToast && <AchievementToast achievement={unlockedToast} />}
       {celebration && <CelebrationOverlay moduleName={celebration} onComplete={() => setCelebration(null)} />}
