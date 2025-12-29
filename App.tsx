@@ -3,10 +3,47 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import SimulationCanvas from './components/SimulationCanvas';
 import Cockpit3D from './components/Cockpit3D';
 import { DEFAULT_PLANET } from './constants';
-// Fix: Added missing Building type import from types.ts
 import { PlanetData, ColonyState, BuildingType, ViewMode, InventoryItem, Mission, Achievement, Building } from './types';
 import { generatePlanetDestinations } from './services/geminiService';
 import { spaceAudio } from './services/audioService';
+
+const CelebrationOverlay: React.FC<{ moduleName: string; onComplete: () => void }> = ({ moduleName, onComplete }) => {
+  useEffect(() => {
+    const timer = setTimeout(onComplete, 2500);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
+
+  return (
+    <div className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden">
+      <div className="text-center animate-[whoa_0.6s_ease-out_forwards]">
+        <div className="text-cyan-400 font-black text-8xl italic tracking-tighter drop-shadow-[0_0_30px_rgba(6,182,212,1)]">WHOA!</div>
+        <div className="text-white font-black text-2xl uppercase tracking-[0.4em] mt-4 drop-shadow-lg">
+          {moduleName} DEPLOYED
+        </div>
+      </div>
+      {/* Floating Emojis */}
+      {[...Array(20)].map((_, i) => {
+        const emojis = ['🚀', '✨', '💎', '🛰️', '🛠️', '🎊', '🛸'];
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        const delay = Math.random() * 0.5;
+        const left = Math.random() * 100;
+        return (
+          <div 
+            key={i}
+            className="absolute bottom-0 text-4xl animate-[floatEmoji_2s_ease-out_forwards]"
+            style={{ 
+              left: `${left}%`, 
+              animationDelay: `${delay}s`,
+              opacity: 0
+            }}
+          >
+            {emoji}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const MissionHUD: React.FC<{ missions: Mission[] }> = ({ missions }) => {
   const activeMissions = missions.filter(m => !m.completed);
@@ -53,7 +90,6 @@ const AchievementToast: React.FC<{ achievement: Achievement }> = ({ achievement 
   </div>
 );
 
-// Fix: Implemented the missing NavigationMenu component used for planet selection
 const NavigationMenu: React.FC<{ 
   destinations: PlanetData[], 
   onSelect: (p: PlanetData) => void, 
@@ -129,6 +165,7 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('orbit');
   const [placingType, setPlacingType] = useState<BuildingType | null>(null);
   const [screenEffect, setScreenEffect] = useState<'none' | 'shake' | 'flash'>('none');
+  const [celebration, setCelebration] = useState<string | null>(null);
   
   const [destinations, setDestinations] = useState<PlanetData[]>([]);
   const [showNavMenu, setShowNavMenu] = useState(false);
@@ -232,7 +269,6 @@ const App: React.FC = () => {
       setScreenEffect('none');
       setPlanet(targetPlanet);
       setColony(prev => ({ ...prev, minerals: 10000, energy: 5000, tech: 0, buildings: [] }));
-      // Reset missions for new planet
       setMissions(prev => prev.map(m => ({ ...m, current: 0, completed: false })));
       setHyperdrive(false); 
       setTimeout(() => setViewMode('landing'), 1500);
@@ -315,6 +351,13 @@ const App: React.FC = () => {
         <div className="absolute inset-0 z-[150] bg-white animate-flash-out pointer-events-none" />
       )}
 
+      {celebration && (
+        <CelebrationOverlay 
+          moduleName={celebration} 
+          onComplete={() => setCelebration(null)} 
+        />
+      )}
+
       <SimulationCanvas 
         key={`${planet.name}-${planet.radius}`} 
         planet={planet} 
@@ -325,13 +368,20 @@ const App: React.FC = () => {
         onPlanetClick={() => viewMode === 'orbit' && !hyperdrive && handleLanding()}
         onPlaceBuilding={(pos) => {
           if (!placingType) return;
-          const cost = inventory.find(i => i.type === placingType)?.cost || 0;
+          const selected = inventory.find(i => i.type === placingType);
+          const cost = selected?.cost || 0;
           if (colony.minerals >= cost) {
             setColony(prev => ({
               ...prev,
               minerals: prev.minerals - cost,
               buildings: [...prev.buildings, { id: Math.random().toString(), type: placingType, position: pos, timestamp: Date.now(), progress: 100 }]
             }));
+            
+            // Celebration Trigger
+            setCelebration(selected?.name || 'MODULE');
+            spaceAudio.playWhoosh();
+            spaceAudio.playSuccess();
+            
             setPlacingType(null);
           }
         }}
@@ -442,6 +492,15 @@ const App: React.FC = () => {
       <style>{`
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes shake { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-2px, 2px); } 50% { transform: translate(2px, -2px); } 75% { transform: translate(-2px, -2px); } }
+        @keyframes whoa {
+          0% { transform: scale(0.5); opacity: 0; }
+          50% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes floatEmoji {
+          0% { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(-500px) scale(2) rotate(20deg); opacity: 0; }
+        }
       `}</style>
     </div>
   );

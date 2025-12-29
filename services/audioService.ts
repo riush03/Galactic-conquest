@@ -81,11 +81,34 @@ class SpaceAudio {
     osc.stop(now + 0.2);
   }
 
+  playWhoosh() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const noiseBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.4, this.ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseBuffer.length; i++) output[i] = Math.random() * 2 - 1;
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1500, now);
+    filter.frequency.exponentialRampToValueAtTime(40, now + 0.4);
+
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.5, now);
+    g.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    noise.connect(filter);
+    filter.connect(g);
+    g.connect(this.ctx.destination);
+    noise.start();
+  }
+
   playSuccess() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    // A sequence of four notes for a rewarding "congratulations" chime
-    const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (major arpeggio)
+    const frequencies = [523.25, 659.25, 783.99, 1046.50]; 
     frequencies.forEach((freq, i) => {
       const osc = this.ctx!.createOscillator();
       const g = this.ctx!.createGain();
