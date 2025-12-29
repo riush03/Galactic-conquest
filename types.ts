@@ -74,6 +74,7 @@ export interface Achievement {
   description: string;
   unlocked: boolean;
   unlockedAt?: number;
+  rewardMinerals?: number;
 }
 
 export interface FeedMessage {

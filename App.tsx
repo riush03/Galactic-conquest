@@ -4,19 +4,48 @@ import SimulationCanvas from './components/SimulationCanvas';
 import Cockpit3D from './components/Cockpit3D';
 import { LEVELS } from './constants';
 import { PlanetData, ColonyState, BuildingType, ViewMode, InventoryItem, Mission, Achievement, Building, FeedMessage, MenuState } from './types';
-import { generateScientificLog } from './services/geminiService';
 import { spaceAudio } from './services/audioService';
+
+const AstronautGreeting: React.FC<{ planetName: string; onClose: () => void }> = ({ planetName, onClose }) => {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/20 pointer-events-none">
+      <div className="max-w-md w-full bg-slate-900/90 backdrop-blur-3xl border-2 border-cyan-500 rounded-[40px] p-8 shadow-[0_0_80px_rgba(6,182,212,0.3)] animate-[whoa_0.4s_ease-out] pointer-events-auto">
+        <div className="flex items-center gap-6 mb-6">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-cyan-400">
+             <i className="fas fa-user-astronaut text-slate-950 text-3xl" />
+          </div>
+          <div>
+            <div className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Colony Commander</div>
+            <div className="text-2xl font-black italic uppercase tracking-tighter text-white">Commander Shepard</div>
+          </div>
+        </div>
+        <p className="text-white/80 text-lg font-medium leading-relaxed italic mb-8">
+          "Greetings, Pilot! We've successfully touched down on <span className="text-cyan-400 font-bold">{planetName}</span>. Atmosphere is stable and the resource scanners are already picking up high mineral signatures. Let's begin construction immediately!"
+        </p>
+        <button 
+          onClick={onClose}
+          className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl active:scale-95 border-b-4 border-cyan-800"
+        >
+          Begin Mission
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const AchievementToast: React.FC<{ achievement: Achievement }> = ({ achievement }) => {
   return (
-    <div className="fixed top-8 right-8 z-[250] bg-slate-900 border-2 border-cyan-500/40 p-5 rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.3)] animate-[slideIn_0.3s_ease-out] flex items-center gap-5 pointer-events-none backdrop-blur-xl">
-      <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center border border-cyan-400">
-        <i className={`fas ${achievement.icon} text-cyan-400 text-xl`} />
+    <div className="fixed top-4 right-4 md:top-8 md:right-8 z-[250] bg-slate-900 border-2 border-yellow-500 p-3 md:p-5 rounded-2xl shadow-[0_0_50px_rgba(234,179,8,0.3)] animate-[slideIn_0.3s_ease-out] flex items-center gap-3 md:gap-5 pointer-events-none backdrop-blur-xl max-w-[90vw]">
+      <div className="w-10 h-10 md:w-14 md:h-14 bg-yellow-500/20 rounded-xl flex items-center justify-center border border-yellow-400 flex-shrink-0">
+        <i className={`fas ${achievement.icon} text-yellow-400 text-xl md:text-2xl`} />
       </div>
       <div>
-        <div className="text-[10px] font-black text-cyan-500 uppercase tracking-widest mb-1">Status: Unlocked</div>
-        <div className="text-xl font-black italic uppercase tracking-tighter text-white leading-none">{achievement.title}</div>
-        <div className="text-white/40 text-[9px] uppercase mt-1">{achievement.description}</div>
+        <div className="text-[8px] md:text-[10px] font-black text-yellow-500 uppercase tracking-widest mb-1 flex justify-between">
+          <span>Achievement Unlocked</span>
+          {achievement.rewardMinerals && <span className="text-white ml-2">+ {achievement.rewardMinerals} MIN</span>}
+        </div>
+        <div className="text-lg md:text-2xl font-black italic uppercase tracking-tighter text-white leading-none">{achievement.title}</div>
+        <div className="text-white/40 text-[8px] md:text-[10px] uppercase mt-1 line-clamp-1">{achievement.description}</div>
       </div>
     </div>
   );
@@ -29,11 +58,16 @@ const CelebrationOverlay: React.FC<{ moduleName: string; onComplete: () => void 
   }, [onComplete]);
 
   return (
-    <div className="absolute inset-0 z-[300] pointer-events-none flex flex-col items-center justify-center bg-cyan-500/10 backdrop-blur-sm animate-flash-out">
-      <h2 className="text-7xl md:text-9xl font-black italic tracking-tighter uppercase text-white drop-shadow-[0_0_40px_rgba(255,255,255,0.4)] animate-[whoa_0.4s_ease-out]">
-        {moduleName}
-      </h2>
-      <div className="bg-cyan-500 text-white font-black px-8 py-2 rounded-full text-xs uppercase tracking-[0.5em] mt-6 shadow-2xl">Constructed</div>
+    <div className="absolute inset-0 z-[300] pointer-events-none flex flex-col items-center justify-center bg-cyan-500/10 backdrop-blur-sm animate-flash-out p-4">
+      <div className="bg-white/10 p-8 md:p-12 rounded-[40px] md:rounded-[60px] border border-white/20 backdrop-blur-3xl flex flex-col items-center max-w-full">
+        <div className="w-16 h-16 md:w-24 md:h-24 bg-cyan-500 rounded-full flex items-center justify-center mb-4 md:mb-6 shadow-[0_0_40px_rgba(6,182,212,0.8)] animate-pulse">
+           <i className="fas fa-hammer text-2xl md:text-4xl text-white" />
+        </div>
+        <h2 className="text-4xl md:text-8xl font-black italic tracking-tighter uppercase text-white drop-shadow-[0_0_40px_rgba(255,255,255,0.4)] animate-[whoa_0.4s_ease-out] text-center">
+          {moduleName}
+        </h2>
+        <div className="bg-cyan-500 text-white font-black px-6 py-2 rounded-full text-[10px] md:text-xs uppercase tracking-[0.5em] mt-6 md:mt-8 shadow-2xl">Module Operational</div>
+      </div>
     </div>
   );
 };
@@ -42,54 +76,54 @@ const SplashOverlay: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
   return (
     <div className="absolute inset-0 z-[200] bg-slate-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden group" onClick={onComplete}>
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900 via-transparent to-transparent animate-pulse" />
-      <h1 data-text="VOYAGE" className="glitch-text text-8xl md:text-[14rem] font-black italic tracking-tighter leading-none text-white mb-16 transition-transform group-hover:scale-105 duration-1000">VOYAGE</h1>
-      <button className="px-16 py-6 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-2xl uppercase tracking-[0.4em] rounded-2xl border-2 border-cyan-400 transition-all shadow-2xl group-active:scale-95">
-        Start Game
+      <h1 data-text="VOYAGE" className="glitch-text text-6xl md:text-[14rem] font-black italic tracking-tighter leading-none text-white mb-16 transition-transform group-hover:scale-105 duration-1000">VOYAGE</h1>
+      <button className="px-12 py-5 md:px-16 md:py-6 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xl md:text-2xl uppercase tracking-[0.4em] rounded-2xl border-2 border-cyan-400 transition-all shadow-2xl group-active:scale-95">
+        Initiate System
       </button>
-      <div className="absolute bottom-10 text-cyan-500/30 text-[10px] font-mono tracking-widest uppercase">Initializing Colonial Link 4.0.1</div>
+      <div className="absolute bottom-10 text-cyan-500/30 text-[10px] font-mono tracking-widest uppercase">Initializing Colonial Link 5.1.0</div>
     </div>
   );
 };
 
 const GalaxyMap: React.FC<{ onSelect: (idx: number) => void; currentIdx: number; onClose: () => void }> = ({ onSelect, currentIdx, onClose }) => {
   return (
-    <div className="absolute inset-0 z-[100] bg-slate-950/98 backdrop-blur-3xl flex flex-col items-center p-8 md:p-16 overflow-y-auto scrollbar-thin">
+    <div className="absolute inset-0 z-[100] bg-slate-950/98 backdrop-blur-3xl flex flex-col items-center p-4 md:p-16 overflow-y-auto scrollbar-thin">
       <div className="max-w-7xl w-full">
-        <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/5 pb-8">
+        <div className="mb-8 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/5 pb-8">
           <div className="text-left">
-            <h2 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase mb-2">Planetary Chart</h2>
-            <p className="text-cyan-400 text-[11px] font-black tracking-[0.5em] uppercase">Target a world for colonization</p>
+            <h2 className="text-4xl md:text-7xl font-black italic tracking-tighter uppercase mb-2">Galaxy Chart</h2>
+            <p className="text-cyan-400 text-[9px] md:text-[11px] font-black tracking-[0.5em] uppercase">Select destination for jump</p>
           </div>
-          <button onClick={onClose} className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Dismiss</button>
+          <button onClick={onClose} className="px-6 py-2 md:px-8 md:py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Dismiss</button>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6 md:gap-8">
           {LEVELS.map((level, idx) => (
             <button
               key={idx}
               onClick={() => onSelect(idx)}
-              className={`group relative p-8 rounded-3xl border-2 transition-all text-left overflow-hidden h-[300px] flex flex-col justify-between
+              className={`group relative p-6 md:p-8 rounded-3xl border-2 transition-all text-left overflow-hidden h-[280px] md:h-[320px] flex flex-col justify-between
                 ${idx === currentIdx ? 'border-cyan-500 bg-cyan-500/10 shadow-[0_0_30px_rgba(6,182,212,0.2)]' : 'border-white/5 bg-slate-900/40 hover:border-white/20 hover:bg-slate-900/60'}
               `}
             >
               <div className="relative z-10">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white group-hover:text-cyan-400">{level.planet.name}</h3>
-                  <div className="w-8 h-8 rounded-full border-2 border-white/20 shadow-xl" style={{ backgroundColor: level.planet.baseColor }} />
+                <div className="flex justify-between items-center mb-4 md:mb-6">
+                  <h3 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-white group-hover:text-cyan-400">{level.planet.name}</h3>
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white/20 shadow-xl" style={{ backgroundColor: level.planet.baseColor }} />
                 </div>
-                <p className="text-white/40 text-[10px] uppercase font-medium leading-relaxed line-clamp-3 tracking-tight">{level.planet.description}</p>
+                <p className="text-white/40 text-[10px] md:text-[11px] uppercase font-medium leading-relaxed line-clamp-3 tracking-tight">{level.planet.description}</p>
               </div>
-              <div className="relative z-10 grid grid-cols-3 gap-4 border-t border-white/10 pt-6">
+              <div className="relative z-10 grid grid-cols-3 gap-2 md:gap-4 border-t border-white/10 pt-4 md:pt-6">
                 <div className="text-center">
-                  <div className="text-[8px] text-white/30 font-black mb-1">MIN</div>
-                  <div className="text-lg font-mono font-bold text-yellow-500">{level.planet.resources.minerals}</div>
+                  <div className="text-[8px] md:text-[9px] text-white/30 font-black mb-1">MIN</div>
+                  <div className="text-base md:text-xl font-mono font-bold text-yellow-500">{level.planet.resources.minerals}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[8px] text-white/30 font-black mb-1">NRG</div>
-                  <div className="text-lg font-mono font-bold text-cyan-400">{level.planet.resources.energy}</div>
+                  <div className="text-[8px] md:text-[9px] text-white/30 font-black mb-1">NRG</div>
+                  <div className="text-base md:text-xl font-mono font-bold text-cyan-400">{level.planet.resources.energy}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[8px] text-white/30 font-black mb-1">TCH</div>
-                  <div className="text-lg font-mono font-bold text-purple-400">{level.planet.resources.tech}</div>
+                  <div className="text-[8px] md:text-[9px] text-white/30 font-black mb-1">TCH</div>
+                  <div className="text-base md:text-xl font-mono font-bold text-purple-400">{level.planet.resources.tech}</div>
                 </div>
               </div>
             </button>
@@ -104,6 +138,7 @@ const App: React.FC = () => {
   const [menuState, setMenuState] = useState<MenuState>('splash');
   const [levelIndex, setLevelIndex] = useState(0); 
   const [showGalaxyMap, setShowGalaxyMap] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(false);
   
   const currentLevelDef = LEVELS[levelIndex];
   const [planet, setPlanet] = useState<PlanetData>(currentLevelDef.planet);
@@ -115,14 +150,15 @@ const App: React.FC = () => {
   const [celebration, setCelebration] = useState<string | null>(null);
   
   const [achievements, setAchievements] = useState<Achievement[]>([
-    { id: 'first_landing', title: 'Small Step', icon: 'fa-shoe-prints', description: 'Touch down on an alien world.', unlocked: false },
-    { id: 'master_builder', title: 'Industrialist', icon: 'fa-industry', description: 'Deploy 5 structures on a planet.', unlocked: false },
-    { id: 'warp_speed', title: 'Faster Than Light', icon: 'fa-bolt', description: 'Engage Hyperdrive protocols.', unlocked: false },
+    { id: 'first_landing', title: 'Small Step', icon: 'fa-shoe-prints', description: 'Touch down on an alien world.', unlocked: false, rewardMinerals: 500 },
+    { id: 'master_builder', title: 'Industrialist', icon: 'fa-industry', description: 'Deploy 5 structures on a planet.', unlocked: false, rewardMinerals: 1000 },
+    { id: 'rover_commander', title: 'Scout Master', icon: 'fa-car-side', description: 'Deploy 3 automated rovers.', unlocked: false, rewardMinerals: 800 },
+    { id: 'warp_speed', title: 'Faster Than Light', icon: 'fa-bolt', description: 'Engage Hyperdrive protocols.', unlocked: false, rewardMinerals: 300 },
   ]);
   const [unlockedToast, setUnlockedToast] = useState<Achievement | null>(null);
 
   const [colony, setColony] = useState<ColonyState>({
-    isEstablished: false, minerals: 1500, energy: 800, tech: 0, buildings: []
+    isEstablished: false, minerals: 2000, energy: 1000, tech: 0, buildings: []
   });
 
   const unlockAchievement = useCallback((id: string) => {
@@ -130,6 +166,10 @@ const App: React.FC = () => {
       if (a.id === id && !a.unlocked) {
         const updated = { ...a, unlocked: true };
         setUnlockedToast(updated);
+        if (updated.rewardMinerals) {
+          setColony(c => ({ ...c, minerals: c.minerals + updated.rewardMinerals! }));
+        }
+        spaceAudio.playSuccess();
         setTimeout(() => setUnlockedToast(null), 5000);
         return updated;
       }
@@ -139,6 +179,7 @@ const App: React.FC = () => {
 
   const handleWarpToLevel = async (nextIdx: number) => {
     setShowGalaxyMap(false);
+    setShowGreeting(false);
     if (menuState !== 'playing') setMenuState('playing');
     if (hyperdrive) return; 
 
@@ -149,7 +190,7 @@ const App: React.FC = () => {
     setTimeout(() => {
       setLevelIndex(nextIdx);
       setPlanet(LEVELS[nextIdx].planet);
-      setColony(prev => ({ ...prev, buildings: [], minerals: 1500, energy: 800 }));
+      setColony(prev => ({ ...prev, buildings: [], minerals: prev.minerals }));
       setHyperdrive(false); 
       setScreenEffect('flash'); 
       unlockAchievement('warp_speed');
@@ -163,7 +204,7 @@ const App: React.FC = () => {
     { type: 'habitat', name: 'Colony Pod', cost: 150, icon: 'fa-house-user', color: 'text-blue-400' },
     { type: 'solar', name: 'Power Array', cost: 80, icon: 'fa-bolt', color: 'text-cyan-400' },
     { type: 'plants', name: 'Biodome', cost: 120, icon: 'fa-leaf', color: 'text-green-400' },
-    { type: 'rover', name: 'Space Rover', cost: 200, icon: 'fa-car-side', color: 'text-orange-400' },
+    { type: 'rover', name: 'Space Rover', cost: 300, icon: 'fa-car-side', color: 'text-orange-400' },
   ];
 
   useEffect(() => {
@@ -172,9 +213,9 @@ const App: React.FC = () => {
       setColony(prev => {
         let m = 5, e = 5;
         prev.buildings.forEach(b => {
-          if (b.type === 'extractor') m += 25;
-          if (b.type === 'solar') e += 40;
-          if (b.type === 'plants') e += 10;
+          if (b.type === 'extractor') m += 30;
+          if (b.type === 'solar') e += 50;
+          if (b.type === 'plants') e += 15;
         });
         return { ...prev, minerals: prev.minerals + m, energy: prev.energy + e };
       });
@@ -198,60 +239,61 @@ const App: React.FC = () => {
             setColony(prev => {
               const newB = [...prev.buildings, { id: Math.random().toString(), type: placingType!, position: pos, timestamp: Date.now(), progress: 100 }];
               if (newB.length >= 5) unlockAchievement('master_builder');
+              if (newB.filter(b => b.type === 'rover').length >= 3) unlockAchievement('rover_commander');
               return { ...prev, minerals: prev.minerals - selected.cost, buildings: newB };
             });
-            setCelebration(selected.name); setPlacingType(null); spaceAudio.playSuccess();
+            setCelebration(selected.name); setPlacingType(null); spaceAudio.playLaser();
           }
         }}
         isPlacing={placingType} isStarted={menuState === 'playing'}
-        onLandComplete={() => { setViewMode('surface'); unlockAchievement('first_landing'); }} 
+        onLandComplete={() => { setViewMode('surface'); unlockAchievement('first_landing'); setShowGreeting(true); spaceAudio.playSuccess(); }} 
         onAscendComplete={() => setViewMode('orbit')}
       />
 
       {(viewMode === 'orbit' || viewMode === 'ascending') && menuState === 'playing' && <Cockpit3D tilt={viewOffset} isHyperdrive={hyperdrive} />}
 
       {menuState === 'playing' && !showGalaxyMap && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-12 bg-slate-950/80 backdrop-blur-2xl px-16 py-4 rounded-full border border-white/10 z-50 shadow-2xl">
+        <div className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 flex items-center gap-6 md:gap-12 bg-slate-950/80 backdrop-blur-2xl px-10 md:px-20 py-3 md:py-5 rounded-full border border-white/10 z-50 shadow-2xl">
           <div className="flex flex-col items-center">
-            <span className="text-[9px] text-yellow-500 font-black uppercase tracking-widest mb-1">Minerals</span>
-            <span className="text-2xl font-mono font-black">{Math.floor(colony.minerals)}</span>
+            <span className="text-[8px] md:text-[10px] text-yellow-500 font-black uppercase tracking-widest mb-1">Minerals</span>
+            <span className="text-xl md:text-3xl font-mono font-black">{Math.floor(colony.minerals)}</span>
           </div>
-          <div className="w-px h-8 bg-white/10" />
+          <div className="w-px h-8 md:h-10 bg-white/10" />
           <div className="flex flex-col items-center">
-            <span className="text-[9px] text-cyan-400 font-black uppercase tracking-widest mb-1">Energy</span>
-            <span className="text-2xl font-mono font-black">{Math.floor(colony.energy)}</span>
+            <span className="text-[8px] md:text-[10px] text-cyan-400 font-black uppercase tracking-widest mb-1">Energy</span>
+            <span className="text-xl md:text-3xl font-mono font-black">{Math.floor(colony.energy)}</span>
           </div>
         </div>
       )}
 
       {viewMode === 'surface' && menuState === 'playing' && !showGalaxyMap && (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-4 flex flex-col items-center gap-8">
-          <div className={`px-12 py-3 rounded-full border border-cyan-400/50 bg-cyan-600/30 backdrop-blur-xl transition-all ${placingType ? 'scale-110 shadow-[0_0_30px_rgba(6,182,212,0.4)]' : ''}`}>
-            <span className="text-[11px] font-black uppercase tracking-[0.5em] text-white italic">
-              {placingType ? `Positioning ${placingType.toUpperCase()} module...` : "Select a structure to deploy"}
+        <div className="absolute bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-2 md:px-4 flex flex-col items-center gap-4 md:gap-8">
+          <div className={`px-8 md:px-12 py-2 md:py-3 rounded-full border border-cyan-400/50 bg-cyan-600/30 backdrop-blur-xl transition-all ${placingType ? 'scale-105 shadow-[0_0_30px_rgba(6,182,212,0.4)]' : ''}`}>
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.5em] text-white italic">
+              {placingType ? `Targeting zone for ${placingType.toUpperCase()}` : "Select structure to deploy"}
             </span>
           </div>
-          <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 flex items-center justify-between w-full shadow-2xl overflow-hidden">
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+          <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 rounded-3xl md:rounded-[40px] p-4 md:p-8 flex flex-col md:flex-row items-center justify-between w-full shadow-2xl gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-4 w-full md:w-auto">
               {inventory.map((item) => (
                 <button 
                   key={item.type} 
                   onClick={() => { setPlacingType(placingType === item.type ? null : item.type); spaceAudio.playLaser(); }}
                   disabled={colony.minerals < item.cost}
-                  className={`relative flex-shrink-0 w-24 h-24 rounded-3xl border-2 transition-all flex flex-col items-center justify-center
-                    ${placingType === item.type ? 'bg-cyan-600/40 border-cyan-400 scale-105 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'bg-white/5 border-transparent hover:bg-white/10'}
+                  className={`relative flex-shrink-0 w-full h-16 md:w-28 md:h-28 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center
+                    ${placingType === item.type ? 'bg-cyan-600/40 border-cyan-400 scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'bg-white/5 border-transparent hover:bg-white/10'}
                     ${colony.minerals < item.cost ? 'opacity-20 grayscale cursor-not-allowed' : ''}
                   `}
                 >
-                  <i className={`fas ${item.icon} text-3xl mb-1 ${item.color}`} />
-                  <span className="text-[8px] font-black uppercase tracking-tighter text-center px-1">{item.name}</span>
-                  <div className="absolute -top-2 -right-2 bg-slate-900 px-2 py-1 rounded-lg text-[8px] font-mono border border-white/10">{item.cost}</div>
+                  <i className={`fas ${item.icon} text-xl md:text-4xl mb-1 md:mb-2 ${item.color}`} />
+                  <span className="text-[7px] md:text-[9px] font-black uppercase tracking-tighter text-center px-1 truncate w-full">{item.name}</span>
+                  <div className="absolute -top-2 -right-1 md:-top-3 md:-right-3 bg-slate-900 px-2 md:px-3 py-0.5 md:py-1 rounded-lg md:rounded-xl text-[7px] md:text-[10px] font-mono border border-white/10 shadow-lg">{item.cost}</div>
                 </button>
               ))}
             </div>
             <button 
-              onClick={() => { setViewMode('ascending'); spaceAudio.playWhoosh(); }} 
-              className="ml-8 bg-cyan-600 hover:bg-cyan-500 text-white px-12 py-8 rounded-3xl text-xs font-black uppercase tracking-[0.3em] border border-cyan-400 transition-all hover:scale-105 active:scale-95"
+              onClick={() => { setViewMode('ascending'); setShowGreeting(false); spaceAudio.playWhoosh(); }} 
+              className="w-full md:w-auto md:ml-8 bg-cyan-600 hover:bg-cyan-500 text-white px-8 md:px-16 py-4 md:py-10 rounded-2xl md:rounded-3xl text-xs md:text-sm font-black uppercase tracking-[0.3em] border border-cyan-400 transition-all hover:scale-105 active:scale-95 shadow-2xl"
             >
               Orbit Insertion
             </button>
@@ -260,29 +302,30 @@ const App: React.FC = () => {
       )}
 
       {viewMode === 'orbit' && menuState === 'playing' && !hyperdrive && !showGalaxyMap && (
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-10">
+        <div className="absolute bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-6 md:gap-10">
           <div className="animate-bounce">
-            <div className="px-12 py-3 bg-white/10 backdrop-blur-md rounded-full border border-white/10 text-cyan-400 font-black uppercase text-xs tracking-widest italic">
+            <div className="px-10 py-3 md:px-16 md:py-4 bg-white/10 backdrop-blur-md rounded-full border border-white/10 text-cyan-400 font-black uppercase text-[10px] md:text-sm tracking-widest italic shadow-xl">
               World Targeted: {planet.name}
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-10">
             <button 
               onClick={() => { setViewMode('landing'); spaceAudio.playWhoosh(); }} 
-              className="px-20 py-8 rounded-3xl font-black text-sm uppercase tracking-[0.5em] bg-cyan-600 border-2 border-cyan-400 hover:scale-105 transition-all shadow-[0_0_50px_rgba(6,182,212,0.4)]"
+              className="px-12 py-6 md:px-24 md:py-10 rounded-2xl md:rounded-3xl font-black text-sm md:text-lg uppercase tracking-[0.3em] md:tracking-[0.5em] bg-cyan-600 border-2 border-cyan-400 hover:scale-110 transition-all shadow-[0_0_60px_rgba(6,182,212,0.5)]"
             >
-              Initiate Landing
+              Land Ship
             </button>
             <button 
               onClick={() => { setShowGalaxyMap(true); spaceAudio.playLaser(); }} 
-              className="px-12 py-8 bg-slate-900 border border-white/10 rounded-3xl text-xs font-black uppercase tracking-[0.4em] hover:bg-slate-800 transition-all"
+              className="px-8 py-6 md:px-16 md:py-10 bg-slate-900 border border-white/10 rounded-2xl md:rounded-3xl text-xs md:text-sm font-black uppercase tracking-[0.4em] hover:bg-slate-800 transition-all shadow-xl"
             >
-              Star Chart
+              Star Map
             </button>
           </div>
         </div>
       )}
 
+      {showGreeting && <AstronautGreeting planetName={planet.name} onClose={() => setShowGreeting(false)} />}
       {unlockedToast && <AchievementToast achievement={unlockedToast} />}
       {celebration && <CelebrationOverlay moduleName={celebration} onComplete={() => setCelebration(null)} />}
     </div>

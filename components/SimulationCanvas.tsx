@@ -59,6 +59,7 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   const ghostRef = useRef<THREE.Group | null>(null);
   const placementRingRef = useRef<THREE.Mesh | null>(null);
   const vfxGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const astronautRef = useRef<THREE.Group | null>(null);
 
   const sceneRef = useRef<{
     scene: THREE.Scene;
@@ -73,72 +74,120 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     engineGlows: THREE.Mesh[];
   } | null>(null);
 
+  const createAstronaut = () => {
+    const group = new THREE.Group();
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.8 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const visorMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, metalness: 0.9, roughness: 0.1, emissive: 0x00ffff, emissiveIntensity: 0.5 });
+
+    // Body
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(4, 6, 4, 8), whiteMat);
+    body.position.y = 8;
+    group.add(body);
+
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(3.5, 12, 12), whiteMat);
+    head.position.y = 15;
+    group.add(head);
+
+    // Visor
+    const visor = new THREE.Mesh(new THREE.SphereGeometry(2.5, 12, 12, 0, Math.PI * 2, 0, Math.PI / 1.8), visorMat);
+    visor.position.set(0, 15, 1.5);
+    visor.rotation.x = -Math.PI / 2;
+    group.add(visor);
+
+    // Jetpack
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(6, 8, 3), darkMat);
+    pack.position.set(0, 10, -3);
+    group.add(pack);
+
+    // Arms
+    const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(1, 4, 4, 8), whiteMat);
+    leftArm.name = "leftArm";
+    leftArm.position.set(-5, 12, 0);
+    group.add(leftArm);
+
+    const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(1, 4, 4, 8), whiteMat);
+    rightArm.name = "rightArm";
+    rightArm.position.set(5, 12, 0);
+    group.add(rightArm);
+
+    group.scale.setScalar(1.5);
+    return group;
+  };
+
   const createBuildingModel = (type: BuildingType, isGhost = false) => {
     const group = new THREE.Group();
     group.name = `building-${type}`;
     const opacity = isGhost ? 0.5 : 1.0;
     const getMat = (color: number, emissive = 0x000000) => new THREE.MeshStandardMaterial({ 
-      color: isGhost ? 0x00ffff : color, transparent: isGhost, opacity, metalness: 0.7, roughness: 0.2,
-      emissive: isGhost ? 0x00ffff : emissive, emissiveIntensity: isGhost ? 0.8 : 0.4
+      color: isGhost ? 0x00ffff : color, transparent: isGhost, opacity, metalness: 0.8, roughness: 0.2,
+      emissive: isGhost ? 0x00ffff : emissive, emissiveIntensity: isGhost ? 1.0 : 0.5
     });
 
-    const basePlate = new THREE.Mesh(new THREE.CylinderGeometry(25, 28, 5, 12), getMat(0x1e293b));
-    basePlate.position.y = -2.5;
+    const basePlate = new THREE.Mesh(new THREE.CylinderGeometry(25, 30, 8, 16), getMat(0x0f172a));
+    basePlate.position.y = -4;
     group.add(basePlate);
 
     if (type === 'extractor') {
-      const tower = new THREE.Mesh(new THREE.BoxGeometry(15, 45, 15), getMat(0xeab308, 0x713f12));
-      tower.position.y = 22.5;
-      const drill = new THREE.Mesh(new THREE.ConeGeometry(8, 20, 8), getMat(0x64748b));
-      drill.name = "drill";
-      drill.position.y = -10;
-      drill.rotation.x = Math.PI;
-      tower.add(drill);
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(18, 50, 18), getMat(0xeab308, 0x713f12));
+      tower.position.y = 25;
+      const bit = new THREE.Mesh(new THREE.CylinderGeometry(2, 12, 25, 8), getMat(0x64748b, 0x1e293b));
+      bit.name = "drill";
+      bit.position.y = -15;
+      tower.add(bit);
       group.add(tower);
     } else if (type === 'solar') {
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 45), getMat(0x94a3b8));
-      pole.position.y = 22.5;
-      const panelGroup = new THREE.Group();
-      panelGroup.position.y = 45;
-      const p1 = new THREE.Mesh(new THREE.BoxGeometry(80, 2, 30), getMat(0x0284c7, 0x0c4a6e));
-      p1.rotation.z = 0.4;
-      panelGroup.add(p1);
-      group.add(pole, panelGroup);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 50), getMat(0x94a3b8));
+      pole.position.y = 25;
+      const panels = new THREE.Group();
+      panels.position.y = 50;
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(90, 2, 40), getMat(0x0284c7, 0x075985));
+      p1.rotation.z = 0.5;
+      panels.add(p1);
+      group.add(pole, panels);
     } else if (type === 'lab') {
-      const body = new THREE.Mesh(new THREE.SphereGeometry(25, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), getMat(0xffffff, 0x475569));
-      const dish = new THREE.Mesh(new THREE.SphereGeometry(12, 12, 8, 0, Math.PI * 2, 0, Math.PI / 3), getMat(0x64748b, 0x334155));
+      const body = new THREE.Mesh(new THREE.IcosahedronGeometry(28, 1), getMat(0xffffff, 0x64748b));
+      body.position.y = 20;
+      const dish = new THREE.Mesh(new THREE.SphereGeometry(15, 12, 8, 0, Math.PI * 2, 0, Math.PI / 3), getMat(0x64748b, 0x00ffff));
       dish.name = "dish";
-      dish.position.y = 30;
+      dish.position.y = 45;
       dish.rotation.x = -0.5;
       group.add(body, dish);
     } else if (type === 'plants') {
-      const glass = new THREE.Mesh(new THREE.SphereGeometry(32, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), 
-        new THREE.MeshStandardMaterial({ color: 0xccffcc, transparent: true, opacity: isGhost ? 0.2 : 0.4, metalness: 0.9, roughness: 0.1 }));
-      const plants = new THREE.Mesh(new THREE.TorusKnotGeometry(12, 4, 64, 8), getMat(0x22c55e, 0x14532d));
-      plants.position.y = 15;
-      group.add(glass, plants);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(35, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), 
+        new THREE.MeshStandardMaterial({ color: 0xa7f3d0, transparent: true, opacity: isGhost ? 0.3 : 0.45, metalness: 0.9, roughness: 0.05 }));
+      const life = new THREE.Mesh(new THREE.TorusKnotGeometry(15, 5, 100, 16), getMat(0x22c55e, 0x064e3b));
+      life.position.y = 15;
+      life.name = "plant";
+      group.add(dome, life);
     } else if (type === 'habitat') {
-      const main = new THREE.Mesh(new THREE.CapsuleGeometry(15, 20, 4, 12), getMat(0x38bdf8, 0x0c4a6e));
-      main.position.y = 15;
-      group.add(main);
+      const hub = new THREE.Mesh(new THREE.CapsuleGeometry(18, 25, 4, 16), getMat(0x38bdf8, 0x075985));
+      hub.position.y = 20;
+      const lights = new THREE.Mesh(new THREE.TorusGeometry(18, 1, 8, 24), getMat(0x00ffff, 0x00ffff));
+      lights.position.y = 35; lights.rotation.x = Math.PI / 2;
+      group.add(hub, lights);
     } else if (type === 'rover') {
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(20, 8, 30), getMat(0x94a3b8, 0x1e293b));
-      chassis.position.y = 10;
-      const wheelGeo = new THREE.CylinderGeometry(5, 5, 4, 12);
+      const chassis = new THREE.Group();
+      chassis.name = "roverChassis";
+      const body = new THREE.Mesh(new THREE.BoxGeometry(25, 10, 40), getMat(0x94a3b8, 0x334155));
+      body.position.y = 5;
+      chassis.add(body);
+      const wheelGeo = new THREE.CylinderGeometry(8, 8, 6, 16);
       const wheelMat = getMat(0x111827);
       for(let i=0; i<4; i++) {
         const w = new THREE.Mesh(wheelGeo, wheelMat);
+        w.name = `wheel_${i}`;
         w.rotation.z = Math.PI / 2;
-        w.position.set(i < 2 ? -12 : 12, 8, i % 2 === 0 ? -10 : 10);
+        w.position.set(i < 2 ? -18 : 18, 5, i % 2 === 0 ? -15 : 15);
         chassis.add(w);
       }
-      const ant = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 20), getMat(0x00ffff));
-      ant.position.set(0, 15, -10);
-      chassis.add(ant);
+      const cam = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 6), getMat(0x0ea5e9, 0x00ffff));
+      cam.position.set(0, 15, -15);
+      chassis.add(cam);
       group.add(chassis);
     }
 
-    // MEDIUM SCALE REFINED: 1.8
     group.scale.setScalar(1.8);
     return group;
   };
@@ -148,7 +197,7 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 100000); 
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 300000); 
     camera.position.z = 2500;
     
     const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
@@ -156,21 +205,21 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.current.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-    const sun = new THREE.DirectionalLight(0xffffff, 4.0);
-    sun.position.set(5000, 2000, 1000);
+    scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+    const sun = new THREE.DirectionalLight(0xffffff, 5.0);
+    sun.position.set(15000, 8000, 3000);
     scene.add(sun);
 
-    const starCount = 10000;
+    const starCount = 20000;
     const starGeo = new THREE.BufferGeometry();
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
-      starPos[i*3] = (Math.random() - 0.5) * 80000;
-      starPos[i*3+1] = (Math.random() - 0.5) * 80000;
-      starPos[i*3+2] = (Math.random() - 0.5) * 80000;
+      starPos[i*3] = (Math.random() - 0.5) * 150000;
+      starPos[i*3+1] = (Math.random() - 0.5) * 150000;
+      starPos[i*3+2] = (Math.random() - 0.5) * 150000;
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 5, transparent: true, opacity: 0.8 }));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 7, transparent: true, opacity: 0.9 }));
     scene.add(stars);
 
     const planetGroup = new THREE.Group();
@@ -179,13 +228,13 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     const pRadius = (planetRef.current?.radius || 120) * 4.5;
     const planetMesh = new THREE.Mesh(
       new THREE.SphereGeometry(pRadius, 128, 128), 
-      new THREE.MeshStandardMaterial({ color: planetRef.current.baseColor, roughness: 0.8, metalness: 0.2 })
+      new THREE.MeshStandardMaterial({ color: planetRef.current.baseColor, roughness: 0.75, metalness: 0.25 })
     );
     planetGroup.add(planetMesh);
 
     const atmo = new THREE.Mesh(
-      new THREE.SphereGeometry(pRadius * 1.06, 64, 64), 
-      new THREE.MeshBasicMaterial({ color: planetRef.current.atmosphereColor, transparent: true, opacity: 0.2, side: THREE.BackSide })
+      new THREE.SphereGeometry(pRadius * 1.07, 64, 64), 
+      new THREE.MeshBasicMaterial({ color: planetRef.current.atmosphereColor, transparent: true, opacity: 0.25, side: THREE.BackSide })
     );
     planetGroup.add(atmo);
 
@@ -195,28 +244,35 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     scene.add(vfxGroupRef.current);
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(60, 65, 32),
+      new THREE.RingGeometry(70, 76, 32),
       new THREE.MeshBasicMaterial({ color: 0x00ffff, side: THREE.DoubleSide, transparent: true, opacity: 0 })
     );
     scene.add(ring);
     placementRingRef.current = ring;
 
     const shipGroup = new THREE.Group();
-    shipGroup.position.set(0, -150, 800);
+    shipGroup.position.set(0, -150, 1200);
     scene.add(shipGroup);
     
-    const shipMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
-    const shipBody = new THREE.Mesh(new THREE.BoxGeometry(60, 24, 160), shipMat);
-    const cockpit = new THREE.Mesh(new THREE.SphereGeometry(18, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.7 }));
-    cockpit.position.set(0, 12, -40); cockpit.rotation.x = Math.PI / 2;
+    shipGroup.scale.setScalar(2.5);
+    const shipMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.15 });
+    const shipBody = new THREE.Mesh(new THREE.BoxGeometry(60, 26, 170), shipMat);
+    const cockpit = new THREE.Mesh(new THREE.SphereGeometry(22, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.8 }));
+    cockpit.position.set(0, 13, -50); cockpit.rotation.x = Math.PI / 2;
     shipGroup.add(shipBody, cockpit);
 
     const engineGlows: THREE.Mesh[] = [];
-    [[-45, -6, 80], [45, -6, 80]].forEach(pos => {
-      const glow = new THREE.Mesh(new THREE.CylinderGeometry(5, 15, 60, 12), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 }));
-      glow.position.set(pos[0], pos[1], pos[2] + 30); glow.rotation.x = Math.PI / 2;
+    [[-45, -7, 85], [45, -7, 85]].forEach(pos => {
+      const glow = new THREE.Mesh(new THREE.CylinderGeometry(6, 18, 65, 12), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.95 }));
+      glow.position.set(pos[0], pos[1], pos[2] + 32); glow.rotation.x = Math.PI / 2;
       shipGroup.add(glow); engineGlows.push(glow);
     });
+
+    // Create Astronaut (Hidden initially)
+    const astro = createAstronaut();
+    astro.visible = false;
+    planetMesh.add(astro);
+    astronautRef.current = astro;
 
     sceneRef.current = { scene, camera, renderer, planetMesh, planetGroup, atmo, stars, buildingGroup, shipGroup, engineGlows };
 
@@ -256,8 +312,8 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
        if (isDragging.current && viewModeRef.current === 'surface' && !isPlacingRef.current) {
          const deltaX = clientX - previousMouse.current.x;
          const deltaY = clientY - previousMouse.current.y;
-         targetRotation.current.x += deltaY * 0.005;
-         targetRotation.current.y += deltaX * 0.005;
+         targetRotation.current.x += deltaY * 0.006;
+         targetRotation.current.y += deltaX * 0.006;
          previousMouse.current = { x: clientX, y: clientY };
        }
     });
@@ -293,9 +349,11 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
       const normal = new THREE.Vector3().copy(model.position).normalize();
       model.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
       
-      // Keep track of rover movement data
       if (b.type === 'rover') {
-        model.userData.wanderOffset = Math.random() * 1000;
+        model.userData.targetPos = new THREE.Vector3().copy(model.position);
+        model.userData.isMoving = false;
+        model.userData.originalNormal = new THREE.Vector3().copy(normal);
+        model.userData.angle = 0;
       }
       
       buildingGroup.add(model);
@@ -309,18 +367,8 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     const rad = p.radius * 4.5;
     planetMesh.geometry = new THREE.SphereGeometry(rad, 128, 128);
     (planetMesh.material as THREE.MeshStandardMaterial).color.set(p.baseColor);
-    atmo.geometry = new THREE.SphereGeometry(rad * 1.06, 64, 64);
+    atmo.geometry = new THREE.SphereGeometry(rad * 1.07, 64, 64);
     (atmo.material as THREE.MeshBasicMaterial).color.set(p.atmosphereColor);
-    
-    planetGroup.children.filter(c => c.name === 'rings').forEach(c => planetGroup.remove(c));
-    if (p.hasRings) {
-      const r = new THREE.Mesh(
-        new THREE.RingGeometry(rad * 1.4, rad * 2.2, 64),
-        new THREE.MeshStandardMaterial({ color: p.ringColor || 0xaaaaaa, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
-      );
-      r.rotation.x = Math.PI / 2.5; r.name = 'rings';
-      planetGroup.add(r);
-    }
   }, [planet]);
 
   useEffect(() => {
@@ -338,59 +386,117 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
 
       if (curM === 'orbit') {
         planetMesh.rotation.y += curP.rotationSpeed;
+        if (astronautRef.current) astronautRef.current.visible = false;
       } else if (curM === 'surface') {
-        currentRotation.current.x += (targetRotation.current.x - currentRotation.current.x) * 0.1;
-        currentRotation.current.y += (targetRotation.current.y - currentRotation.current.y) * 0.1;
+        currentRotation.current.x += (targetRotation.current.x - currentRotation.current.x) * 0.15;
+        currentRotation.current.y += (targetRotation.current.y - currentRotation.current.y) * 0.15;
         planetMesh.rotation.x = currentRotation.current.x;
         planetMesh.rotation.y = currentRotation.current.y;
+
+        // Astronaut Animation
+        if (astronautRef.current) {
+          astronautRef.current.visible = true;
+          // Slowly wave hand
+          const leftArm = astronautRef.current.getObjectByName("leftArm");
+          if (leftArm) leftArm.rotation.x = Math.sin(time * 0.005) * 0.5;
+          const rightArm = astronautRef.current.getObjectByName("rightArm");
+          if (rightArm) rightArm.rotation.z = Math.PI + Math.sin(time * 0.008) * 0.8;
+          
+          // Hover if still landing
+          if (astronautRef.current.userData.landingPhase < 1) {
+            astronautRef.current.userData.landingPhase += 0.01;
+            const r = curP.radius * 4.5;
+            const hoverHeight = 40 * (1 - astronautRef.current.userData.landingPhase);
+            const pos = astronautRef.current.userData.landPoint.clone().normalize().multiplyScalar(r + 5 + hoverHeight);
+            astronautRef.current.position.copy(pos);
+            const normal = pos.clone().normalize();
+            astronautRef.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+          }
+        }
       }
 
-      // Animate building sub-parts
       buildingGroup.children.forEach((b: any) => {
         if (b.name === 'building-extractor') {
           const drill = b.getObjectByName('drill');
-          if (drill) drill.rotation.y += 0.2;
+          if (drill) drill.rotation.y += 0.3;
         } else if (b.name === 'building-lab') {
           const dish = b.getObjectByName('dish');
-          if (dish) dish.rotation.y += 0.02;
+          if (dish) dish.rotation.y += 0.03;
+        } else if (b.name === 'building-plants') {
+          const plant = b.getObjectByName('plant');
+          if (plant) {
+             plant.rotation.y += 0.01;
+             plant.scale.setScalar(1 + Math.sin(time * 0.002) * 0.1);
+          }
         } else if (b.name === 'building-rover') {
-          // Movement Logic for Rovers
-          const offset = b.userData.wanderOffset || 0;
-          const speed = 0.0005;
-          const t = (time + offset) * speed;
-          
-          // Move rover slightly along a circular path relative to its original point
-          // Since it's a child of the planet mesh, we can rotate its group around the center
-          b.rotation.y += 0.002;
-          // Jitter wheels
-          b.children[1]?.children.forEach((w: any) => w.rotation.x += 0.1);
+          const rRadius = curP.radius * 4.5;
+          const roverSpeed = 0.8;
+          if (!b.userData.isMoving || b.position.distanceTo(b.userData.targetPos) < 10) {
+            const randAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+            const angle = (Math.random() - 0.5) * 0.3; 
+            const newTarget = b.position.clone().applyAxisAngle(randAxis, angle).normalize().multiplyScalar(rRadius);
+            b.userData.targetPos = newTarget;
+            b.userData.isMoving = true;
+          }
+          const direction = b.userData.targetPos.clone().sub(b.position).normalize();
+          b.position.add(direction.multiplyScalar(roverSpeed));
+          b.position.normalize().multiplyScalar(rRadius);
+          const normal = b.position.clone().normalize();
+          b.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+          const chassis = b.getObjectByName('roverChassis');
+          if (chassis) {
+            const lookTarget = b.userData.targetPos.clone();
+            const localTarget = chassis.worldToLocal(lookTarget);
+            const angleToTarget = Math.atan2(localTarget.x, localTarget.z);
+            chassis.rotation.y += (angleToTarget - chassis.rotation.y) * 0.1;
+            chassis.children.forEach((child: any) => {
+              if (child.name.startsWith('wheel')) child.rotation.x += 0.25;
+            });
+            chassis.position.y = 5 + Math.sin(time * 0.02) * 0.5;
+          }
         }
       });
 
       if (curM === 'orbit') {
-        const tZ = curH ? 6000 : 2000;
+        const tZ = curH ? 8000 : 2800;
         camera.position.z += (tZ - camera.position.z) * 0.1;
         camera.position.y += (0 - camera.position.y) * 0.1;
         camera.lookAt(0, 0, 0);
         shipGroup.visible = true;
+        shipGroup.position.z += (1200 - shipGroup.position.z) * 0.1;
       } else if (curM === 'landing') {
-        camera.position.z += (400 - camera.position.z) * 0.02;
-        camera.position.y += (200 - camera.position.y) * 0.02;
-        if (camera.position.z < 450) onLandComplete();
-        shipGroup.visible = false;
+        const planetRad = curP.radius * 4.5;
+        // DEEP ZOOM: Camera goes very close to surface
+        camera.position.z += (planetRad + 400 - camera.position.z) * 0.03;
+        camera.position.y += (200 - camera.position.y) * 0.03;
+        
+        shipGroup.position.z += (planetRad + 100 - shipGroup.position.z) * 0.03;
+        shipGroup.position.y += (-50 - shipGroup.position.y) * 0.03;
+        shipGroup.scale.setScalar(2.5 * (1 + (800 - shipGroup.position.z)/600));
+
+        if (camera.position.z < planetRad + 650) {
+          // Initialize astronaut landing point
+          if (astronautRef.current) {
+            const ray = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion).negate();
+            astronautRef.current.userData.landPoint = new THREE.Vector3().copy(ray).multiplyScalar(planetRad);
+            astronautRef.current.userData.landingPhase = 0;
+          }
+          onLandComplete();
+        }
+        shipGroup.visible = true;
       } else if (curM === 'ascending') {
-        camera.position.z += (2000 - camera.position.z) * 0.05;
-        if (camera.position.z > 1900) onAscendComplete();
-        shipGroup.visible = false;
+        camera.position.z += (2800 - camera.position.z) * 0.05;
+        shipGroup.position.z += (1200 - shipGroup.position.z) * 0.05;
+        if (camera.position.z > 2700) onAscendComplete();
+        shipGroup.visible = true;
       } else if (curM === 'surface') {
         const r = curP.radius * 4.5;
-        camera.position.z += (r + 400 - camera.position.z) * 0.1;
-        camera.position.y += (300 - camera.position.y) * 0.1;
+        camera.position.z += (r + 450 - camera.position.z) * 0.15;
+        camera.position.y += (350 - camera.position.y) * 0.15;
         camera.lookAt(0, 0, 0);
         shipGroup.visible = false;
       }
 
-      // Ghost placement
       if (curPlacing && ghostRef.current && curM === 'surface') {
         raycaster.current.setFromCamera(mouse.current, camera);
         const hit = raycaster.current.intersectObject(planetMesh);
@@ -401,10 +507,10 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
           ghostRef.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n);
           if (placementRingRef.current) {
             placementRingRef.current.visible = true;
-            placementRingRef.current.position.copy(hit[0].point).add(n.clone().multiplyScalar(2));
+            placementRingRef.current.position.copy(hit[0].point).add(n.clone().multiplyScalar(3));
             placementRingRef.current.quaternion.copy(ghostRef.current.quaternion);
             placementRingRef.current.rotation.x += Math.PI / 2;
-            (placementRingRef.current.material as THREE.MeshBasicMaterial).opacity = 0.5;
+            (placementRingRef.current.material as THREE.MeshBasicMaterial).opacity = 0.6;
           }
         } else {
           ghostRef.current.visible = false;
@@ -415,22 +521,24 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
         if (placementRingRef.current) placementRingRef.current.visible = false;
       }
 
-      const s = curH ? 10000 : 15;
+      const s = curH ? 15000 : 25;
       const arr = stars.geometry.attributes.position.array as Float32Array;
       for (let i = 0; i < arr.length / 3; i++) {
         arr[i*3+2] += s;
-        if (arr[i*3+2] > 40000) arr[i*3+2] = -40000;
+        if (arr[i*3+2] > 60000) arr[i*3+2] = -60000;
       }
       stars.geometry.attributes.position.needsUpdate = true;
 
       if (curM === 'orbit') {
-        shipGroup.position.x += (curO.x * 70 - shipGroup.position.x) * 0.1;
-        shipGroup.position.y += (-curO.y * 70 - 150 - shipGroup.position.y) * 0.1;
-        shipGroup.rotation.z = -curO.x * 0.7;
+        shipGroup.position.x += (curO.x * 120 - shipGroup.position.x) * 0.1;
+        shipGroup.position.y += (-curO.y * 120 - 150 - shipGroup.position.y) * 0.1;
+        shipGroup.rotation.z = -curO.x * 0.9;
+        shipGroup.rotation.y = curO.x * 0.4;
+        shipGroup.rotation.x = -curO.y * 0.4;
       }
 
       engineGlows.forEach(g => {
-        g.scale.setY(1 + (curH ? 150 : (curM === 'ascending' ? 40 : 1)) * (0.8 + Math.random() * 0.4));
+        g.scale.setY(1 + (curH ? 250 : (curM === 'ascending' || curM === 'landing' ? 80 : 1)) * (0.8 + Math.random() * 0.4));
       });
 
       renderer.render(scene, camera);
