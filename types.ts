@@ -19,35 +19,30 @@ export interface PlanetData {
   };
 }
 
-export type MenuState = 'splash' | 'main' | 'playing';
+export type BuildingCategory = 'colony' | 'station' | 'science';
 
-export type BuildingType = 'extractor' | 'solar' | 'lab' | 'habitat' | 'satellite' | 'drone' | 'plants' | 'rover' | 'shuttle';
+export type BuildingType = 
+  | 'extractor' | 'solar' | 'habitat' | 'lab' | 'drone' | 'rover' | 'flag' | 'plants' // Colony & General
+  | 'station_core' | 'station_wing' | 'station_dock' | 'shuttle' // Station
+  | 'satellite' | 'telescope' | 'comm_dish'; // Science
 
 export interface Building {
   id: string;
   type: BuildingType;
+  category: BuildingCategory;
   position: [number, number, number];
-  timestamp: number;
-  progress: number;
+  rotation?: [number, number, number];
+  planetIndex: number;
 }
 
 export interface ColonyState {
-  isEstablished: boolean;
   minerals: number;
   energy: number;
   tech: number;
   buildings: Building[];
 }
 
-export type ViewMode = 'orbit' | 'surface' | 'landing' | 'ascending';
-
-export interface InventoryItem {
-  type: BuildingType;
-  name: string;
-  cost: number;
-  icon: string;
-  color: string;
-}
+export type ViewMode = 'system' | 'focus';
 
 export interface Mission {
   id: string;
@@ -55,32 +50,23 @@ export interface Mission {
   description: string;
   target: number;
   current: number;
-  type: 'build' | 'resource_minerals' | 'resource_energy' | 'resource_tech';
+  type: 'build';
   requirement: string;
   completed: boolean;
   buildingType?: BuildingType;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  condition: (state: { buildings: Building[], minerals: number, visitedPlanets: Set<number> }) => boolean;
+  unlocked: boolean;
 }
 
 export interface LevelDef {
   index: number;
   planet: PlanetData;
   missions: Mission[];
-}
-
-export interface Achievement {
-  id: string;
-  title: string;
-  icon: string;
-  description: string;
-  unlocked: boolean;
-  unlockedAt?: number;
-  rewardMinerals?: number;
-}
-
-export interface FeedMessage {
-  id: string;
-  sender: 'EARTH CONTROL' | 'COLONY SCIENTIST' | 'SYSTEM';
-  text: string;
-  timestamp: string;
-  type: 'info' | 'urgent' | 'success';
 }

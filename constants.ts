@@ -1,184 +1,238 @@
 
-import { PlanetData, LevelDef } from './types';
+import { LevelDef, Achievement } from './types';
+
+export const ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 'first_step',
+    title: 'First Step',
+    description: 'Establish your first building in the solar system.',
+    icon: 'fa-shoe-prints',
+    condition: (s) => s.buildings.length >= 1,
+    unlocked: false
+  },
+  {
+    id: 'planet_hopper',
+    title: 'Planet Hopper',
+    description: 'Visit at least 3 unique celestial bodies.',
+    icon: 'fa-shuttle-space',
+    condition: (s) => s.visitedPlanets.size >= 3,
+    unlocked: false
+  },
+  {
+    id: 'solar_empire',
+    title: 'Solar Empire',
+    description: 'Maintain 5 active buildings across the system.',
+    icon: 'fa-chess-rook',
+    condition: (s) => s.buildings.length >= 5,
+    unlocked: false
+  },
+  {
+    id: 'industrialist',
+    title: 'Industrialist',
+    description: 'Reach a treasury of 500 credits.',
+    icon: 'fa-vault',
+    condition: (s) => s.minerals >= 500,
+    unlocked: false
+  },
+  {
+    id: 'xenobiologist',
+    title: 'Xenobiologist',
+    description: 'Deploy 2 Research Labs on a gas giant or toxic world.',
+    icon: 'fa-microscope',
+    condition: (s) => s.buildings.filter(b => b.type === 'lab').length >= 2,
+    unlocked: false
+  },
+  {
+    id: 'master_navigator',
+    title: 'Master Navigator',
+    description: 'Visit all 9 major celestial bodies.',
+    icon: 'fa-compass',
+    condition: (s) => s.visitedPlanets.size >= 9,
+    unlocked: false
+  }
+];
 
 export const LEVELS: LevelDef[] = [
   {
-    index: 1,
+    index: 0,
     planet: {
-      name: "Gia Prime",
-      type: "Terrestrial",
-      baseColor: "#3b82f6",
-      atmosphereColor: "#60a5fa",
-      radius: 120,
-      rotationSpeed: 0.002,
-      description: "A serene oceanic world. The perfect place to start our colonial expansion.",
-      anomalies: ["Bioluminescent oceans"],
+      name: "The Sun",
+      type: "Ancient",
+      baseColor: "#ffcc00",
+      atmosphereColor: "#ffaa00",
+      radius: 1000,
+      rotationSpeed: 0.0005,
+      description: "A G-type main-sequence star. It contains 99.86% of the mass in the Solar System and generates energy through nuclear fusion.",
+      anomalies: ["Solar Flare Activity", "Neutrino Emission", "Convection Zone"],
       hasRings: false,
-      resources: { minerals: 5, energy: 8, tech: 4 }
+      resources: { minerals: 0, energy: 100, tech: 50 }
     },
     missions: [
-      { id: 'l1m1', title: 'Power Start', description: 'Deploy 2 Solar Arrays.', target: 2, current: 0, type: 'build', buildingType: 'solar', requirement: 'Solar Panels', completed: false },
-      { id: 'l1m2', title: 'Resource Hub', description: 'Build 1 Extractor.', target: 1, current: 0, type: 'build', buildingType: 'extractor', requirement: 'Extractor', completed: false }
+      { id: "s1", title: "Helio-Station", description: "Deploy a station in high orbit to monitor flares.", target: 1, current: 0, type: 'build', requirement: "1 Station Core", completed: false, buildingType: 'station_core' },
+      { id: "s2", title: "Solar Array Alpha", description: "Capture massive energy output.", target: 3, current: 0, type: 'build', requirement: "3 Solar Arrays", completed: false, buildingType: 'solar' }
+    ]
+  },
+  {
+    index: 1,
+    planet: {
+      name: "Mercury",
+      type: "Arid",
+      baseColor: "#4a4a4a",
+      atmosphereColor: "#ffffff",
+      radius: 40,
+      rotationSpeed: 0.001,
+      description: "The smallest planet. Heavily cratered and scorched by the Sun, it has a massive iron core.",
+      anomalies: ["Caloris Basin", "Magnetic Reconnection", "Ice in Shadows"],
+      hasRings: false,
+      resources: { minerals: 15, energy: 20, tech: 5 }
+    },
+    missions: [
+      { id: "m1", title: "Iron Extraction", description: "Establish mineral mining operations.", target: 2, current: 0, type: 'build', requirement: "2 Extractors", completed: false, buildingType: 'extractor' },
+      { id: "m2", title: "Surface Survey", description: "Deploy rovers to scan craters.", target: 3, current: 0, type: 'build', requirement: "3 Rovers", completed: false, buildingType: 'rover' }
     ]
   },
   {
     index: 2,
     planet: {
-      name: "Zyon-4",
-      type: "Arid",
-      baseColor: "#f59e0b",
-      atmosphereColor: "#fbbf24",
-      radius: 100,
-      rotationSpeed: 0.004,
-      description: "A dusty desert world with high mineral concentrations but scarce water.",
-      anomalies: ["Glass storms"],
-      hasRings: true,
-      ringColor: "#d97706",
-      resources: { minerals: 9, energy: 4, tech: 3 }
+      name: "Venus",
+      type: "Toxic",
+      baseColor: "#e3bb76",
+      atmosphereColor: "#ffcc00",
+      radius: 95,
+      rotationSpeed: -0.0005,
+      description: "Earth's twin in size, but a hellscape of thick sulfuric acid clouds and extreme surface pressure.",
+      anomalies: ["Retrograde rotation", "Lightning Storms", "Maat Mons Volcano"],
+      hasRings: false,
+      resources: { minerals: 8, energy: 30, tech: 8 }
     },
     missions: [
-      { id: 'l2m1', title: 'Dust Settlement', description: 'Deploy 3 Habitats.', target: 3, current: 0, type: 'build', buildingType: 'habitat', requirement: 'Colony Pods', completed: false },
-      { id: 'l2m2', title: 'Mining Op', description: 'Deploy 2 Extractors.', target: 2, current: 0, type: 'build', buildingType: 'extractor', requirement: 'Extractors', completed: false }
+      { id: "v1", title: "Atmosphere Lab", description: "Study the runaway greenhouse effect.", target: 1, current: 0, type: 'build', requirement: "1 Research Lab", completed: false, buildingType: 'lab' },
+      { id: "v2", title: "Hardened Drones", description: "Monitor the crushing surface pressure.", target: 4, current: 0, type: 'build', requirement: "4 Maintenance Drones", completed: false, buildingType: 'drone' }
     ]
   },
   {
     index: 3,
     planet: {
-      name: "Ignis Delta",
-      type: "Lava",
-      baseColor: "#ef4444",
-      atmosphereColor: "#f87171",
-      radius: 140,
+      name: "Earth",
+      type: "Terrestrial",
+      baseColor: "#1e40af",
+      atmosphereColor: "#60a5fa",
+      radius: 100,
       rotationSpeed: 0.001,
-      description: "A volatile volcanic world. Extremely hazardous, but rich in thermal energy.",
-      anomalies: ["Magma rivers"],
+      description: "Our cradle. A vibrant world of liquid water, oxygen, and life protected by a magnetosphere.",
+      anomalies: ["Technosphere", "Dynamic Biosphere", "Tidal Lock"],
       hasRings: false,
-      resources: { minerals: 10, energy: 10, tech: 2 }
+      resources: { minerals: 10, energy: 10, tech: 15 }
     },
     missions: [
-      { id: 'l3m1', title: 'Thermal Harvest', description: 'Reach 25,000 Minerals.', target: 25000, current: 0, type: 'resource_minerals', requirement: 'Stored Minerals', completed: false },
-      { id: 'l3m2', title: 'Research Base', description: 'Build 1 Science Lab.', target: 1, current: 0, type: 'build', buildingType: 'lab', requirement: 'Science Lab', completed: false }
+      { id: "e1", title: "Orbital Relay", description: "Ensure global communication coverage.", target: 3, current: 0, type: 'build', requirement: "3 Comms Satellites", completed: false, buildingType: 'satellite' },
+      { id: "e2", title: "Coastal Colony", description: "Establish a new habitat node.", target: 2, current: 0, type: 'build', requirement: "2 Habitat Pods", completed: false, buildingType: 'habitat' }
     ]
   },
   {
     index: 4,
     planet: {
-      name: "Glacies VII",
-      type: "Ice Giant",
-      baseColor: "#60a5fa",
-      atmosphereColor: "#dbeafe",
-      radius: 180,
-      rotationSpeed: 0.006,
-      description: "A frozen giant. Solar energy is weak here due to distance from the sun.",
-      anomalies: ["Absolute zero pockets"],
-      hasRings: true,
-      ringColor: "#ffffff",
-      resources: { minerals: 3, energy: 2, tech: 9 }
+      name: "Mars",
+      type: "Arid",
+      baseColor: "#991b1b",
+      atmosphereColor: "#f87171",
+      radius: 53,
+      rotationSpeed: 0.002,
+      description: "The Red Planet. Host to Olympus Mons, the largest volcano in the Solar System.",
+      anomalies: ["Olympus Mons", "Valles Marineris", "Subsurface Water"],
+      hasRings: false,
+      resources: { minerals: 12, energy: 15, tech: 18 }
     },
     missions: [
-      { id: 'l4m1', title: 'Energy Grid', description: 'Deploy 6 Solar Arrays.', target: 6, current: 0, type: 'build', buildingType: 'solar', requirement: 'Solar Arrays', completed: false },
-      { id: 'l4m2', title: 'Cold Science', description: 'Build 2 Science Labs.', target: 2, current: 0, type: 'build', buildingType: 'lab', requirement: 'Science Labs', completed: false }
+      { id: "ma1", title: "Bio-Dome Beta", description: "Start the terraforming process with plants.", target: 3, current: 0, type: 'build', requirement: "3 Bio-Domes", completed: false, buildingType: 'plants' },
+      { id: "ma2", title: "Rover Fleet", description: "Map the Valles Marineris canyon.", target: 5, current: 0, type: 'build', requirement: "5 Surface Rovers", completed: false, buildingType: 'rover' }
     ]
   },
   {
     index: 5,
     planet: {
-      name: "Venoma",
-      type: "Toxic",
-      baseColor: "#10b981",
-      atmosphereColor: "#34d399",
-      radius: 110,
-      rotationSpeed: 0.003,
-      description: "The atmosphere is corrosive. Organic life requires heavy shielding.",
-      anomalies: ["Acid rain"],
+      name: "Jupiter",
+      type: "Gas Giant",
+      baseColor: "#92400e",
+      atmosphereColor: "#f59e0b",
+      radius: 220,
+      rotationSpeed: 0.005,
+      description: "King of planets. A gas giant with 79 moons and a storm twice the size of Earth.",
+      anomalies: ["Great Red Spot", "Strong Magnetosphere", "Metallic Core"],
       hasRings: false,
-      resources: { minerals: 6, energy: 7, tech: 6 }
+      resources: { minerals: 5, energy: 40, tech: 25 }
     },
     missions: [
-      { id: 'l5m1', title: 'Life Support', description: 'Build 3 Biodomes.', target: 3, current: 0, type: 'build', buildingType: 'plants', requirement: 'Biodomes', completed: false },
-      { id: 'l5m2', title: 'Satellite Uplink', description: 'Deploy 1 Satellite.', target: 1, current: 0, type: 'build', buildingType: 'satellite', requirement: 'Satellite', completed: false }
+      { id: "j1", title: "Storm Watch", description: "Deploy labs to monitor the Great Red Spot.", target: 2, current: 0, type: 'build', requirement: "2 Research Labs", completed: false, buildingType: 'lab' },
+      { id: "j2", title: "Gas Harvester", description: "Extract hydrogen from the upper atmosphere.", target: 3, current: 0, type: 'build', requirement: "3 Extractors", completed: false, buildingType: 'extractor' }
     ]
   },
   {
     index: 6,
     planet: {
-      name: "Krystalos",
-      type: "Crystal",
-      baseColor: "#a855f7",
-      atmosphereColor: "#c084fc",
-      radius: 90,
-      rotationSpeed: 0.008,
-      description: "A world composed entirely of resonating crystals. High tech potential.",
-      anomalies: ["Harmonic vibrations"],
-      hasRings: false,
-      resources: { minerals: 5, energy: 5, tech: 10 }
+      name: "Saturn",
+      type: "Gas Giant",
+      baseColor: "#d97706",
+      atmosphereColor: "#fbbf24",
+      radius: 190,
+      rotationSpeed: 0.004,
+      description: "Famous for its stunning ring system, composed of ice and rock particles spanning 282,000 km.",
+      anomalies: ["Hexagonal Storm", "Enceladus Plumes", "Ring Gaps"],
+      hasRings: true,
+      ringColor: "#d97706",
+      ringRadiusInner: 1.8,
+      ringRadiusOuter: 4.5,
+      resources: { minerals: 8, energy: 35, tech: 22 }
     },
     missions: [
-      { id: 'l6m1', title: 'Tech Peak', description: 'Reach 5,000 Tech Points.', target: 5000, current: 0, type: 'resource_tech', requirement: 'Tech Points', completed: false },
-      { id: 'l6m2', title: 'Sky Eye', description: 'Deploy 3 Satellites.', target: 3, current: 0, type: 'build', buildingType: 'satellite', requirement: 'Satellites', completed: false }
+      { id: "sa1", title: "Ring Station", description: "Build a dock for deep space transit.", target: 1, current: 0, type: 'build', requirement: "1 Docking Bay", completed: false, buildingType: 'station_dock' },
+      { id: "sa2", title: "Debris Collector", description: "Study the composition of the rings.", target: 4, current: 0, type: 'build', requirement: "4 Maintenance Drones", completed: false, buildingType: 'drone' }
     ]
   },
   {
     index: 7,
     planet: {
-      name: "Neon Oasis",
-      type: "Cyber",
-      baseColor: "#ec4899",
-      atmosphereColor: "#f472b6",
-      radius: 130,
-      rotationSpeed: 0.01,
-      description: "A world with strange electromagnetic neon clouds. High energy flux.",
-      anomalies: ["Digital mirages"],
+      name: "Uranus",
+      type: "Ice Giant",
+      baseColor: "#0ea5e9",
+      atmosphereColor: "#bae6fd",
+      radius: 120,
+      rotationSpeed: -0.003,
+      description: "An ice giant tilted on its side, likely due to a massive ancient collision.",
+      anomalies: ["Extreme Tilt", "Diamond Rain", "Faint Rings"],
       hasRings: true,
-      ringColor: "#ff00ff",
-      resources: { minerals: 4, energy: 10, tech: 8 }
+      ringColor: "#ffffff",
+      ringRadiusInner: 1.5,
+      ringRadiusOuter: 2.2,
+      resources: { minerals: 15, energy: 15, tech: 30 }
     },
     missions: [
-      { id: 'l7m1', title: 'Power Surge', description: 'Reach 10,000 Energy.', target: 10000, current: 0, type: 'resource_energy', requirement: 'Stored Energy', completed: false },
-      { id: 'l7m2', title: 'Drone Net', description: 'Deploy 4 Drones.', target: 4, current: 0, type: 'build', buildingType: 'drone', requirement: 'Drones', completed: false }
+      { id: "u1", title: "Deep Probe", description: "Search for liquid diamond oceans.", target: 2, current: 0, type: 'build', requirement: "2 Extractors", completed: false, buildingType: 'extractor' },
+      { id: "u2", title: "Telescope Array", description: "Use the dark sky for deep space imaging.", target: 2, current: 0, type: 'build', requirement: "2 Array Telescopes", completed: false, buildingType: 'telescope' }
     ]
   },
   {
     index: 8,
     planet: {
-      name: "Obsidian",
-      type: "Lava",
-      baseColor: "#111827",
-      atmosphereColor: "#374151",
-      radius: 150,
-      rotationSpeed: 0.002,
-      description: "A dark, cooled lava world. Ground visibility is low.",
-      anomalies: ["Shadow pockets"],
-      hasRings: false,
-      resources: { minerals: 8, energy: 3, tech: 5 }
-    },
-    missions: [
-      { id: 'l8m1', title: 'Scout Squad', description: 'Build 4 Rovers.', target: 4, current: 0, type: 'build', buildingType: 'rover', requirement: 'Rovers', completed: false },
-      { id: 'l8m2', title: 'Heavy Hab', description: 'Build 5 Colony Pods.', target: 5, current: 0, type: 'build', buildingType: 'habitat', requirement: 'Colony Pods', completed: false }
-    ]
-  },
-  {
-    index: 9,
-    planet: {
-      name: "Zenith",
-      type: "Ancient",
-      baseColor: "#ffffff",
-      atmosphereColor: "#f0f9ff",
-      radius: 200,
-      rotationSpeed: 0.001,
-      description: "The final frontier. Artifacts of an ancient civilization are scattered here.",
-      anomalies: ["Time dilation zones"],
+      name: "Neptune",
+      type: "Ice Giant",
+      baseColor: "#1e3a8a",
+      atmosphereColor: "#3b82f6",
+      radius: 115,
+      rotationSpeed: 0.0035,
+      description: "The windy planet. Farthest from the Sun, with supersonic winds reaching 2,100 km/h.",
+      anomalies: ["Supersonic Winds", "Great Dark Spot", "Triton Capture"],
       hasRings: true,
-      ringColor: "#e0f2fe",
-      resources: { minerals: 10, energy: 10, tech: 10 }
+      ringColor: "#3b82f6",
+      ringRadiusInner: 1.4,
+      ringRadiusOuter: 1.8,
+      resources: { minerals: 12, energy: 10, tech: 35 }
     },
     missions: [
-      { id: 'l9m1', title: 'Master Colony', description: 'Build 1 of every module type.', target: 9, current: 0, type: 'build', requirement: 'Unique Modules', completed: false },
-      { id: 'l9m2', title: 'Ultimate Resource', description: 'Reach 100,000 Minerals.', target: 100000, current: 0, type: 'resource_minerals', requirement: 'Minerals', completed: false }
+      { id: "n1", title: "Wind Farm", description: "Harness supersonic energy.", target: 4, current: 0, type: 'build', requirement: "4 Solar Arrays", completed: false, buildingType: 'solar' },
+      { id: "n2", title: "Comms Hub", description: "Relay signals from beyond the heliopause.", target: 1, current: 0, type: 'build', requirement: "1 Signal Dish", completed: false, buildingType: 'comm_dish' }
     ]
   }
 ];
 
-export const DEFAULT_PLANET: PlanetData = LEVELS[0].planet;
-export const STAR_COUNT = 2000;
-export const MAX_STAR_SPEED = 5;
+export const STAR_COUNT = 8000;
